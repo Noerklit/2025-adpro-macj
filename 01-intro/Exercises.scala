@@ -32,11 +32,11 @@ end MyModule
 
 def fib(n: Int): Int = {
   @annotation.tailrec
-  def fibo(n: Int, prev: Int, cur: Int) : Int = {
-    if n == 0 then prev
-    else fibo(n-1, cur, prev+cur)
+  def loop(n: Int, prev: Int, cur: Int) : Int = {
+    if (n == 0) prev
+    else loop(n-1, cur, prev + cur)
   }
-  fibo(n+1, 0, 1)
+  loop(n-1, 0, 1)
 }
 
 // Exercise 4
@@ -48,12 +48,13 @@ def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean =
     else if !ordered(as(i), as(i+1)) then false
     else loop(i + 1)
   loop(0)
-    
 
 // Exercise 5
 
+// Har 3 parametre A,B,C. Tager 1 argument funktionen f, som tager har to parametre A,B og returnerer C
+// Værdien der returneres af curry er en funktion af typen A, som returnerer en funktion af typen B => C?
 def curry[A, B, C](f: (A, B) => C): A => (B => C) =
-  (a: A) => (b: B) => f(a,b)
+  (a: A) => (b: B) => f(a,b) 
 
 def isSortedCurried[A]: Array[A] => ((A, A) => Boolean) => Boolean =
   curry(isSorted)
@@ -61,12 +62,12 @@ def isSortedCurried[A]: Array[A] => ((A, A) => Boolean) => Boolean =
 // Exercise 6
 
 def uncurry[A, B, C](f: A => B => C): (A, B) => C =
-  ???
+  (a: A,b: B) => f(a)(b)
 
 def isSortedCurriedUncurried[A]: (Array[A], (A, A) => Boolean) => Boolean =
-  ???
+  uncurry(isSortedCurried)
 
 // Exercise 7
 
 def compose[A, B, C](f: B => C, g: A => B): A => C =
-  ???
+  (a: A) => f(g(a)) 
