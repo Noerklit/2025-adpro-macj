@@ -19,6 +19,12 @@ scala-cli repl .    - to compile the project, load it into repl,
                       it
 scala-cli clean .   - to remove scala-cli generated files
 
+To run tests for a single exercise, for instance Exercise 4 do:
+scala-cli test . -- -f "Ex04"
+To run only the first test do:
+scala-cli test . -- -f "Ex04.01"
+(the string is a filtering condition on the name of the test, a substring check)
+
 Note the period after all commands (it represents the current
 directory).
 
