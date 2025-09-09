@@ -118,26 +118,30 @@ object List:
   //   foldRight(l, Nil, (h, t) => Cons(h, (t, Nil)))
 
  
-  // Exercise 10
+  // Exercise 10 (Not done)
 
   def foldRight1[A, B] (l: List[A], z: B, f: (A, B) => B): B =
-    foldLeft(reverse(l), z, (h, acc) => h)
-
-    def foldRight[A, B] (l: List[A], z: B, f: (A, B) => B): B = l match
-    case Nil => z
-    case Cons(a, as) => f(a, foldRight(as, z, f))
+    foldLeft(reverse(l), z, (h, acc) => f(acc, h))
 
   // Exercise 11
 
   def foldLeft1[A, B] (l: List[A], z: B, f: (B, A) => B): B = ???
  
   // Exercise 12
+  // This uses explicit recursion, so should be rewritten with a HOF
+  def concat[A] (l: List[List[A]]): List[A] = l match
+    case Nil => Nil 
+    case Cons(h, Nil) => h
+    case Cons(h, acc) => append(h, concat(acc))
 
-  def concat[A] (l: List[List[A]]): List[A] = ???
   
   // Exercise 13
 
-  def filter[A] (l: List[A], p: A => Boolean): List[A] = ???
+  def filter[A] (l: List[A], p: A => Boolean): List[A] = (l,p) match
+    case Nil => Nil
+    case ()
+  
+
  
   // Exercise 14
 
