@@ -3,6 +3,8 @@
 
 package adpro.option
 
+import adpro.option.Tree.map
+
 // Exercise 1
 
 trait OrderedPoint
@@ -117,12 +119,15 @@ end Option
 // Exercise 9
 
 def map2[A, B, C](ao: Option[A], bo: Option[B])(f: (A,B) => C): Option[C] =
-  ???
+  for 
+    a <- ao
+    b <- bo
+  yield f(a,b)
 
 // Exercise 10
 
 def sequence[A](aos: List[Option[A]]): Option[List[A]] =
-  ???
+  aos.foldRight(Some(Nil))((aOption, acc) => aOption.flatMap(a => acc.map(xs => a :: xs)))
 
 // Exercise 11
 
@@ -143,10 +148,12 @@ def headOption[A](lst: List[A]): Option[A] = lst match
 // Exercise 7
 
 def headGrade(lst: List[(String,Int)]): Option[Int] =
-  ???
+  headOption(lst.map(pair => pair._2))
 
 def headGrade1(lst: List[(String,Int)]): Option[Int] =
-  ???
+  for 
+    x1 <- headOption(lst)
+  yield x1._2
 
 // Implemented in the text book
 
