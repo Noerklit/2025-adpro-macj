@@ -132,7 +132,7 @@ def sequence[A](aos: List[Option[A]]): Option[List[A]] =
 // Exercise 11
 
 def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
-  ???
+  as.foldRight(Some(Nil))((a, acc) => f(a).flatMap(a => acc.map(xs => a :: xs)))
 
 
 
@@ -164,6 +164,11 @@ def mean(xs: Seq[Double]): Option[Double] =
 // Exercise 8
 
 def variance(xs: Seq[Double]): Option[Double] =
-  ???
+  mean(xs).flatMap(mean => Some(xs.foldRight(0.0)((el, acc) => ((el - mean) * (el -mean)) + acc ) / xs.length))
+
+def variance1(xs: Seq[Double]): Option[Double] =
+  for 
+    x1 <- mean(xs)
+  yield xs.foldRight(0.0)((el, acc) => ((el - x1) * (el - x1)) + acc) / xs.length
 
 // Scroll up, to the Option object for Exercise 9
