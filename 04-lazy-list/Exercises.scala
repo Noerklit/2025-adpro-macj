@@ -64,62 +64,104 @@ enum LazyList[+A]:
 
   // Exercise 2
 
-  def toList: List[A] = 
-    ???
+  def toList: List[A] = this match
+    case Empty => Nil
+    case Cons(h, t) => h() :: t().toList
+  
 
   // Test in the REPL, for instance: LazyList(1,2,3).toList 
   // (and see what list is constructed)
 
   // Exercise 3
 
-  def take(n: Int): LazyList[A] = 
-    ???
+  def take(n: Int): LazyList[A] =
+    if n <= 0 then Empty
+    else this match
+      case Empty => Empty
+      case Cons(h, t) => cons(h(), t().take(n-1))
+    
 
-  def drop(n: Int): LazyList[A] = 
-    ???
+  def drop(n: Int): LazyList[A] =
+     if n <= 0 then this
+     else this match
+      case Empty => Empty
+      case Cons(h, t) => t().drop(n-1)
+     
+  // naturals.take(1000000000).drop(41).take(10).toList
+  // This terminates without exception, because of the lazy structure/laziness. take(1 bil) makes a billion elements available
+  // when we need them/actually use them. drop(41) then skips the first 41 elements of the billion and keeps the rest, 
+  // and take(10) then takes 10 elements and discards the rest. Only when toList is called do we actually force an evaluation
+  // so when building this list we only compute the values used, i.e the 41 we drop and the 10 we take.
+  // If the toList is instead moved to be after either drop(41) or take(1 bil), then we will be computing either a billion elements 
+  // or a billion - 41 elements, resulting in an error. 
+    
 
   // Exercise 4
 
-  def takeWhile(p: A => Boolean): LazyList[A] = 
-    ???
+  def takeWhile(p: A => Boolean): LazyList[A] = this match
+    case Empty => Empty
+    case Cons(h, t) if p(h()) => cons(h(), t().takeWhile(p))
+    case Cons(_,_) => Empty
+
+  // naturals.takeWhile { _ < 1000000000 }.drop(100).take(50).toList
+  // The above also terminates quickly, by the same logic as in exercise 3. When toList is called and forces computations,
+  // we only compute the 100 values we drop and the 50 we take.
+      
 
   // Exercise 5
   
-  def forAll(p: A => Boolean): Boolean =
-    ???
- 
+  def forAll(p: A => Boolean): Boolean = this match
+    case Empty => true
+    case Cons(h, t) if p(h()) => t().forAll(p)
+    case Cons(h,_) => p(h())
+
   // Note 1. lazy; tail is never forced if satisfying element found this is
   // because || is non-strict
   // Note 2. this is also tail recursive (because of the special semantics
   // of ||)
-  def exists(p: A => Boolean): Boolean = 
-    ???
+  def exists(p: A => Boolean): Boolean = this match
+    case Cons(h, t) => p(h()) || t().exists(p)
+    case _ => false
+
+  // We use the following test case for forAll: naturals.forAll { _ < 0 }
+  // If we used this one, it would be crashing: naturals.forAll { _ >=0 }. Why?
+  // Recall that exists has already been implemented before (in the book). Both forAll and exists
+  // are a bit strange for infinite lazy lists; you should not use them unless you know the result; but once
+  // you know the result there is no need to use them. They are fine to use on finite lazy lists. Why?
+  // The test case naturals.forAll { _ >=0 } would fail because it would not terminate, i.e all elements in the naturals list
+  // fulfill the predicate of being bigger or equal to 0, which means we would be evaluating an infinite amount of elements.
+  // Therefore using forAll and exists on infinite lists, if you don't know the answer, can result in an infinite amount of evaluations
+  // which in the end would probably cause the program to crash. On a finite lazy list, this is fine, because the program will
+  // eventually terminate, at the latest at the end of the list.
+  
+  
 
   // Exercise 6
   
   def takeWhile1(p: A => Boolean): LazyList[A] =
-    ???
+    foldRight(Empty)((h, t) => if p(h) then cons(h, t.takeWhile1(p)) else Empty)
+  
 
   // Exercise 7
   
   def headOption1: Option[A] = 
-    ???
+    foldRight(None)((h, t) => Some(h))
 
   // Exercise 8
   
   // Note: The type is incorrect, you need to fix it
-  def map(f: Any): LazyList[Int] = 
-    ???
+  def map[B](f: A => B): LazyList[B] = 
+    foldRight(Empty)((h, t) => cons(f(h), t))
 
   // Note: The type is incorrect, you need to fix it
-  def filter(p: Any): LazyList[Any] = 
-    ???
+  def filter(p: A => Boolean): LazyList[A] = 
+    foldRight(Empty)((h, t) => if p(h) then cons(h, t) else t)
 
   /* Note: The type is given correctly for append, because it is more complex.
    * Try to understand the type. The contsraint 'B >: A' requires that B is a
    * supertype of A. The signature of append allows to concatenate a list of
    * supertype elements, and creates a list of supertype elements.  We could have
-   * writte just the following:
+   * written just the following:
    *
    * def append(that: => LazyList[A]): LazyList[A]
    *
@@ -128,11 +170,11 @@ enum LazyList[+A]:
    * getOrElse last week, and the type of foldRight this week.
    */
   def append[B >: A](that: => LazyList[B]): LazyList[B] = 
-    ???
+    foldRight(that)((h, t) => cons(h, t))
 
   // Note: The type is incorrect, you need to fix it
-  def flatMap(f: Any): LazyList[Any] = 
-    ???
+  def flatMap[B](f: A => LazyList[B]): LazyList[B] = 
+    foldRight(Empty)((h, t) => f(h).append(t))
 
   // Exercise 9
   // Type answer here
@@ -178,13 +220,13 @@ object LazyList:
   // Exercise 1
 
   def from(n: Int): LazyList[Int] =
-    ???
+    cons(n, from(n+1))
 
   def to(n: Int): LazyList[Int] =
-    ???
+    cons(n, to(n-1))
 
   lazy val naturals: LazyList[Int] =
-    ???
+    from(1)
 
   // Scroll up to Exercise 2 to the enum LazyList definition 
   
