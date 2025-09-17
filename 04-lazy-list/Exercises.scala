@@ -242,7 +242,13 @@ object LazyList:
   // Exercise 11
 
   def unfold[A,S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
-    ???
+    f(z).fold(Empty)((a, s) => cons(a, unfold(s)(f)))
+
+  def unfold1[A,S](z: S)(f: S => Option[(A, S)]): LazyList[A] = f(z) match
+    case Some(a, s) => cons(a, unfold1(s)(f))
+    case None => Empty
+
+  
 
   // Exercise 12
 
