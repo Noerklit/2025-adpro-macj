@@ -139,7 +139,7 @@ enum LazyList[+A]:
   // Exercise 6
   
   def takeWhile1(p: A => Boolean): LazyList[A] =
-    foldRight(Empty)((h, t) => if p(h) then cons(h, t.takeWhile1(p)) else Empty)
+    foldRight(Empty)((h, t) => if p(h) then cons(h, t) else Empty)
   
 
   // Exercise 7
@@ -173,6 +173,7 @@ enum LazyList[+A]:
     foldRight(that)((h, t) => cons(h, t))
 
   // Note: The type is incorrect, you need to fix it
+  // Is it alright to use append here or was something else intended?
   def flatMap[B](f: A => LazyList[B]): LazyList[B] = 
     foldRight(Empty)((h, t) => f(h).append(t))
 
@@ -233,8 +234,10 @@ object LazyList:
   // Exercise 10
 
   // Note: The type is incorrect, you need to fix it
-  lazy val fibs: Any = 
-    ???
+  lazy val fibs: LazyList[Int] = 
+    def go(curr: Int, next: Int): LazyList[Int] = 
+      cons(curr, go(next, curr+next))
+    go(0, 1)
 
   // Exercise 11
 
