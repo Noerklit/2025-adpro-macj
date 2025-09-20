@@ -137,9 +137,7 @@ object List:
   
   // Exercise 13
 
-  def filter[A] (l: List[A], p: A => Boolean): List[A] = (l,p) match
-    case Nil => Nil
-    case ()
+  def filter[A] (l: List[A], p: A => Boolean): List[A] = ???
   
 
  

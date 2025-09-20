@@ -179,24 +179,47 @@ enum LazyList[+A]:
 
   // Exercise 9
   // Type answer here
+  // def find(p: A => Boolean): Option[A]= this.filter(p).headOption
+  
+  // I believe the implementation is suitable for lazy lists, because whilst filter will transform the whole list,
+  // the computation is lazy, and will therefore terminate when the first element that matches is found.
+  // For a normal list wherein all elements are already present/computed (unsure how to describe this), 
+  // this would result in us making the filter comparison on all elements in the list no matter what, which is supper ineffiecent,
+  // instead of only doing it until a match is found.
   //
-  // ...
-  //
+
   // Scroll down to Exercise 10 in the companion object below
 
   // Exercise 13
 
-  def mapUnfold[B](f: A => B): LazyList[B] =
-    ???
+  def mapUnfold[B](f: A => B): LazyList[B] = 
+    unfold(this):
+      case Cons(h, t) => Some((f(h()), t()))
+      case _ => None
 
   def takeUnfold(n: Int): LazyList[A] =
-    ???
+    unfold((this, n)):
+      case (Cons(h, t), n) if n > 0 => Some((h()), (t(), n-1))
+      case _ => None
 
   def takeWhileUnfold(p: A => Boolean): LazyList[A] =
-    ???
+    unfold(this):
+      case Cons(h, t) if p(h()) => Some((h()), t())
+      case _ => None
 
   def zipWith[B >: A, C](ope: (=> B, => B) => C)(bs: LazyList[B]): LazyList[C] =
-    ???
+    unfold(this, bs):
+      case (Cons(h, t), Cons(h2, t2)) => Some((ope(h(), h2()), (t(), t2())))
+      case _ => None
+
+  // What should be the result of this?
+  // naturals
+  // .map { _%2==0 }
+  // .zipWith[Boolean,Boolean] (_||_) (naturals.map { _ % 2 == 1 })
+  // .take(10)
+  // .toList
+
+  // For the above I had not seen the output would be booleans, so I thought it would be a list of 1-10
 
 end LazyList // enum ADT
 
@@ -253,7 +276,8 @@ object LazyList:
   // Exercise 12
 
   // Note: The type is incorrect, you need to fix it
-  lazy val fibsUnfold: Any = ???
+  lazy val fibsUnfold: LazyList[Int] = 
+    unfold(0,1)((curr, next) => Some(curr, (next, curr + next)))
 
   // Scroll up for Exercise 13 to the enum
 

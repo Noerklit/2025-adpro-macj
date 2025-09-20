@@ -25,6 +25,11 @@ To run only the first test do:
 scala-cli test . -- -f "Ex04.01"
 (the string is a filtering condition on the name of the test, a substring check)
 
+When in REPL, import the functions in the package (week 4 as an example):
+import adpro.lazyList.*
+If there is a companion object created you also have to import something like this:
+import adpro.lazyList.LazyList.*
+
 Note the period after all commands (it represents the current
 directory).
 
