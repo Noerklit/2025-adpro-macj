@@ -28,28 +28,38 @@ object RNG:
 
   // Exercise 1
 
-  def nonNegativeInt(rng: RNG): (Int, RNG) =
-    ???
+  def nonNegativeInt(rng: RNG): (Int, RNG) = 
+    val (i1, rng2) = rng.nextInt
+    if (i1 < 0) then (-(i1 + 1), rng2)
+    else (i1, rng2)
 
   // Exercise 2
 
+  // Cast Int.MaxValue to a double before adding 1 to it, as it otherwise wraps around to be the lowest negative integer.
   def double(rng: RNG): (Double, RNG) = 
-    ???
+    val (i1, rng2) = nonNegativeInt(rng)
+    (i1 / (Int.MaxValue.toDouble + 1), rng2)
 
   // Exercise 3
   
   // The return type is broken and needs to be fixed
-  def intDouble(rng: RNG): Any = 
-    ???
+  def intDouble(rng: RNG): ((Int, Double), RNG) = 
+    val (i1, rng2) = nonNegativeInt(rng)
+    val (i2, rng3) = double(rng2)
+    ((i1, i2), rng3)
 
   // The return type is broken and needs to be fixed
-  def doubleInt(rng: RNG): Any = 
-    ???
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = 
+    val ((i1, i2), rng2) = intDouble(rng)
+    ((i2, i1), rng2)    
+    // val (i1, rng2) = nonNegativeInt(rng)
+    // val (i2, rng3) = double(rng2)
+    // ((i2, i1), rng3)
 
   // Exercise 4
 
   // The return type is broken and needs to be fixed
-  def ints(size: Int)(rng: RNG): Any = 
+  def ints(size: Int)(rng: RNG): (List[Int], RNG) = 
     ???
 
 
