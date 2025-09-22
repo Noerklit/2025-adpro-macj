@@ -60,7 +60,15 @@ object RNG:
 
   // The return type is broken and needs to be fixed
   def ints(size: Int)(rng: RNG): (List[Int], RNG) = 
-    ???
+    def go(count: Int, rng: RNG, list: List[Int]): (List[Int], RNG) =
+      if (count < size) then (rng.nextInt._1) :: list 
+      else  
+
+
+  // Aux function that is recursive I assume? Inner function gotta check that count is smaller than size
+  // generate a random number and append it to the list, and then call itself with count +1 the new state and the updated list?
+  // First call outside the go function call go(0, rng, ())?
+      
 
 
   type Rand[+A] = RNG => (A, RNG)
