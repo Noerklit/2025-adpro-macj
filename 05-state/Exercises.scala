@@ -59,16 +59,13 @@ object RNG:
   // Exercise 4
 
   // The return type is broken and needs to be fixed
-  def ints(size: Int)(rng: RNG): (List[Int], RNG) = 
-    def go(count: Int, rng: RNG, list: List[Int]): (List[Int], RNG) =
-      if (count < size) then (rng.nextInt._1) :: list 
-      else  
-
-
-  // Aux function that is recursive I assume? Inner function gotta check that count is smaller than size
-  // generate a random number and append it to the list, and then call itself with count +1 the new state and the updated list?
-  // First call outside the go function call go(0, rng, ())?
-      
+  def ints(size: Int)(rng: RNG): (List[Int], RNG) =
+    val (list, rng2) = (0 until size).foldLeft(List.empty[Int], rng) { // Instantiate list and fold from 0 up until size starting with the list being empty
+      case ((acc, r), _) => // is the list built so far of Ints, r is current state
+        val (i, r2) = r.nextInt // generate the first random integer and next state
+        (i :: acc, r2) // Prepend random integer to list and pass next state, _ is the current iteration in the fold, which we dont use here.
+    }
+    (list.reverse, rng2) // Could also reverse list, but doesn't really matter as its random either way (had to reverse to pass comparison of ints and ints2)
 
 
   type Rand[+A] = RNG => (A, RNG)
@@ -88,25 +85,29 @@ object RNG:
   // Exercise 5
 
   lazy val double2: Rand[Double] = 
-    ???
+    map(nonNegativeInt) { i => i / (Int.MaxValue.toDouble + 1)}
 
   // Exercise 6
 
   def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = 
-    ???
+    rng => {
+      val (a, rng2) = ra(rng)
+      val (b, rng3) = rb(rng2)
+      (f(a, b), rng3)
+    }
 
   // Exercise 7
 
   def sequence[A](ras: List[Rand[A]]): Rand[List[A]] =
-    ??? 
+    ras.foldRight(unit(List.empty))((r, acc) =>  map2(r, acc)((x, xs)=> x :: xs)) // instead of x and xs could just be (_ :: _)
 
   def ints2(size: Int): Rand[List[Int]] =
-    ???
+    sequence(List.fill(size) (int))
 
   // Exercise 8
 
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
-    ???
+    
 
   def nonNegativeLessThan(bound: Int): Rand[Int] =
     ???
