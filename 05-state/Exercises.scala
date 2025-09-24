@@ -99,7 +99,7 @@ object RNG:
   // Exercise 7
 
   def sequence[A](ras: List[Rand[A]]): Rand[List[A]] =
-    ras.foldRight(unit(List.empty))((r, acc) =>  map2(r, acc)((x, xs)=> x :: xs)) // instead of x and xs could just be (_ :: _)
+    ras.foldRight(unit(List.empty))((r, acc) =>  map2(r, acc)((x, xs) => x :: xs)) // instead of x and xs could just be (_ :: _)
 
   def ints2(size: Int): Rand[List[Int]] =
     sequence(List.fill(size) (int))
@@ -107,10 +107,15 @@ object RNG:
   // Exercise 8
 
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
-    
+    rng => {
+      val (a, rng2) = f(rng)
+      val (b) = g(a)
+      (b(rng2))
+    }
 
   def nonNegativeLessThan(bound: Int): Rand[Int] =
-    ???
+    flatMap(nonNegativeInt) {i => unit(i % bound)} // This is modulo biased but passes tests
+    // flatMap(nonNegativeInt) {i => if i % bound >= 0 then unit(i % bound) else unit(i % bound + 1) }
 
 end RNG
 
