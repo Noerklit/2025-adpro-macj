@@ -5,6 +5,8 @@ package adpro.state
 
 import adpro.lazyList.LazyList
 import adpro.lazyList.LazyList.*
+import adpro.state.RNG.map2
+import adpro.state.RNG.SimpleRNG
 
 
 trait RNG:
@@ -127,13 +129,23 @@ case class State[S, +A](run: S => (A, S)):
   // Search for the second part (sequence) below
   
   def flatMap[B](f: A => State[S, B]): State[S, B] = 
-    ???
+    State { state => 
+      val (a, state1) = run(state)
+      f(a).run(state1)
+      }
 
   def map[B](f: A => B): State[S, B] = 
-    ???
+    State { state =>
+      val (a, state1) = run(state)
+      (f(a), state1)
+      }
 
   def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] = 
-    ???
+    State { state => 
+      val (a, state1) = run(state)
+      val (b, state2) = sb.run(state1)
+      (f(a,b), state2)
+      }
 
 
 object State:
@@ -157,21 +169,24 @@ object State:
   // Exercise 9 (sequence, continued)
  
   def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] =
-    ???
+    sas.foldRight(unit(List.empty))((state, acc) => state.map2(acc)((x, xs) => x :: xs))
 
   import adpro.lazyList.LazyList
 
   // Exercise 10 (stateToLazyList)
   
   def stateToLazyList[S, A](s: State[S,A])(initial: S): LazyList[A] =
-    ???
+    val (a1, state1) = s.run(initial)
+    (cons(a1, stateToLazyList(s)(state1)))
 
   // Exercise 11 (lazyInts out of stateToLazyList)
   
-  def lazyInts(rng: RNG): LazyList[Int] = 
-    ???
+  def lazyInts(rng: RNG): LazyList[Int] =
+    val int: Rand[Int] = State(_.nextInt)
+    stateToLazyList(int)(rng)
 
   lazy val tenStrictInts: List[Int] = 
-    ???
+    val rng = SimpleRNG(50)
+    lazyInts(rng).take(10).toList
 
 end State
