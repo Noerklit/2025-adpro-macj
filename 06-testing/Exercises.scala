@@ -23,6 +23,7 @@ def list2lazyList[A](la: List[A]): LazyList[A] =
 def genNonEmptyLazyList[A](using Arbitrary[A]): Gen[LazyList[A]] =
   for la <- arbitrary[List[A]].suchThat { _.nonEmpty }
   yield list2lazyList(la)
+
   
 /** Generate an infinite lazy list of A values.
   *
@@ -36,6 +37,10 @@ def infiniteLazyList[A: Arbitrary]: Gen[LazyList[A]] =
       case Some(a) => cons(a, loop)
       case None => empty
   Gen.const(loop)
+
+def genLazyListSpecificLength[A: Arbitrary](n: Int): Gen[LazyList[A]] =
+  for la <- Gen.listOfN(n, arbitrary[A])
+  yield list2lazyList(la)
 
 /* The test suite */
 
@@ -55,10 +60,33 @@ object LazyListSpec
     forAll { (s: LazyList[Int]) => s.headOption != None }      :| "random" 
 
   // Exercise 2
+  property("Ex02.1: headOption does not force the tail of a lazy list") = 
+    val badTail: LazyList[Int] = LazyList.cons(throw new RuntimeException("tail forced"), LazyList.empty)
+    LazyList.cons(42, badTail).headOption.contains(42)
+  
   
   // Exercise 3
+  property("Ex03.1: take does not force any heads nor any tails of the lazy list it manipulates") =
+    val badTail: LazyList[Int] = LazyList.cons(throw new RuntimeException("tail forced"), LazyList.empty)
+    val badHead = LazyList.cons(throw new RuntimeException("Head forced"), badTail)
+    badHead.take(1) != null
+
 
   // Exercise 4
+  property("Ex04.1: take(n) does not force the (n+1)st head ever (even if we force all elements of take(n))") =
+    val n = 100
+     forAll(genLazyListSpecificLength[Int](n)) { prefix =>
+      val poisoned = LazyList.cons(
+        throw new RuntimeException("poisoned!"),
+        LazyList.empty
+      )
+      val list = prefix.append(poisoned)
+
+      list.take(n).toList
+      true
+     }
+
+    
   
   // Exercise 5
   
