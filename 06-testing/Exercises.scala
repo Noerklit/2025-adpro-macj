@@ -49,9 +49,11 @@ object LazyListSpec
 
   // Exercise 1
 
+  // Fails for Lazylist01 because in headoption implementation, if case Empty is not implemented, should return None
   property("Ex01.01: headOption returns None on an empty LazyList") = 
     empty.headOption == None
 
+  // Fails for Lazylist02 because in the def cons, empty is returned instead of Cons(() => head, () => tail)
   property("Ex01.02: headOption returns the head of the stream packaged in Some") =
 
     given Arbitrary[LazyList[Int]] = Arbitrary(genNonEmptyLazyList[Int])
@@ -74,29 +76,42 @@ object LazyListSpec
 
   // Exercise 4
   property("Ex04.1: take(n) does not force the (n+1)st head ever (even if we force all elements of take(n))") =
-    val n = 100
-     forAll(genLazyListSpecificLength[Int](n)) { prefix =>
-      val poisoned = LazyList.cons(
-        throw new RuntimeException("poisoned!"),
-        LazyList.empty
-      )
-      val list = prefix.append(poisoned)
-
-      list.take(n).toList
-      true
-     }
+    ???
 
     
-  
   // Exercise 5
+  // This currently passes for lazylist02, because both sides simply produce an empty list, unsure if it should
+  // I believe it should pass for lazylist01, as the headOption issue is not relevant here.
+
+  property("Ex05.1: l.take(n).take(n) == l.take(n) for any lazy list s and any n.") =
+    
+    // Here I only need to define my generator for a nonEmptyLazyList, since ScalaCheck has one to generate a random integer it just uses
+    // to make the n, in the next exercise I have to define my own since my integers can't be negative.
+    given Arbitrary[LazyList[Int]] = Arbitrary(genNonEmptyLazyList[Int])
+    forAll { (s: LazyList[Int], n: Int) => s.take(n).take(n).toList == s.take(n).toList}
   
   // Exercise 6
+  // Have to pass in the arguments to forAll to ensure that the values of n and m are valid values (positive i)
+  property("Ex06.1: l.drop(n).drop(m) == l.drop(n+m) for any n, m.") =
+    
+    given Arbitrary[LazyList[Int]] = Arbitrary(genNonEmptyLazyList[Int])
+    val nGen = Gen.choose(0, 1000)
+    val mGen = Gen.choose(0, 1000)
+    forAll(genNonEmptyLazyList, nGen, mGen) {(l, n, m) => l.drop(n).drop(m).toList == l.drop(n+m).toList}
   
   // Exercise 7
+  property("Ex07.1: l.drop(n) does not force any of the dropped elements (heads). Should hold even if some element in tail is forced") =
+    ???
 
   // Exercise 8
+  property("Ex08.1: l.map(identity) == l for any lazy list l. Here identity is the identity function.") =
+    ???
 
   // Exercise 9
+  property("Ex09.1: map terminates on infinite lazy lists.") =
+    ???
  
   // Exercise 10
+  property("Ex10.1: ") =
+    ???
 
