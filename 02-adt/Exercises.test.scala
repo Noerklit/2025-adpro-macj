@@ -35,7 +35,10 @@ def nonEmptyListOf[A](using Arbitrary[A]): Gen[List[A]] =
 // really? where is the using keyword gone in Scala 3.6?
 // given [A] => (Arbitrary[A]) => Arbitrary[List[A]] = Arbitrary(listOf[A])
 
-given [A: Arbitrary] => Arbitrary[List[A]] =
+// given [A: Arbitrary] => Arbitrary[List[A]] =
+//   Arbitrary(listOf[A])
+
+given listOf1: [A: Arbitrary] => Arbitrary[List[A]] =
   Arbitrary(listOf[A])
 
 // have to use pattern matching and recursion, as HOFs are
