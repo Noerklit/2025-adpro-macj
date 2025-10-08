@@ -4,17 +4,20 @@
 package adpro.prop
 
 import adpro.state.*
+import adpro.state.RNG.Simple
+import adpro.state.RNG.sequence
+import adpro.state.RNG.nonNegativeInt
 
 val TODO = 42
 
 // Exercise 1
 
-lazy val rng1: RNG = ???
+lazy val rng1: RNG = Simple(TODO)
 
 // Exercise 2
 
-lazy val (x, rng2): (Int, RNG) = ???
-lazy val y = ???
+lazy val (x, rng2): (Int, RNG) = (rng1.nextInt)
+lazy val y = rng2.nextInt._1
 
 // Exercise 3
 
@@ -24,17 +27,18 @@ object Exercise_3:
 
   // Use this generator explicitly in the two properties
   val intList =
-    org.scalacheck.Gen.listOf(org.scalacheck.Gen.choose(0, 100))
-      .suchThat (_.nonEmpty)
+    org.scalacheck.Gen
+      .listOf(org.scalacheck.Gen.choose(0, 100))
+      .suchThat(_.nonEmpty)
 
   // The properties are put into a function taking `minimum` as argument to
   // allow the teachers to test them with different mutants of `minimum`.
 
-  def p1Min (minimum: List[Int] => Int): org.scalacheck.Prop =
-    ???
+  def p1Min(minimum: List[Int] => Int): org.scalacheck.Prop =
+    org.scalacheck.Prop.forAll(intList)(l => l.forall(e => e >= minimum(l)))
 
-  def p2Min (minimum: List[Int] => Int): org.scalacheck.Prop =
-    ???
+  def p2Min(minimum: List[Int] => Int): org.scalacheck.Prop =
+    org.scalacheck.Prop.forAll(intList)(l => l.exists(e => e == minimum(l)))
 
 end Exercise_3
 
@@ -44,11 +48,12 @@ object Exercise_4:
 
   // This implementation of Prop is only used in Exercise 4
   trait Prop:
-    self => // TODO remove
+    self => // TODO Remove
     def check: Boolean
 
-    infix def && (that: Prop): Prop =
-      ???
+    infix def &&(that: Prop): Prop =
+      new Prop:
+        def check: Boolean = self.check && that.check
 
 end Exercise_4
 
@@ -58,30 +63,34 @@ object Gen:
 
   extension [A](g: Gen[A])
     // Let's convert generator to streams of generators
-    def toLazyList (rng: RNG): LazyList[A] =
-      LazyList.unfold[A,RNG](rng)(rng => Some(g.run(rng)))
+    def toLazyList(rng: RNG): LazyList[A] =
+      LazyList.unfold[A, RNG](rng)(rng => Some(g.run(rng)))
 
   // Exercise 5
-  def choose (start: Int, stopExclusive: Int): Gen[Int] =
-    ???
+  def choose(start: Int, stopExclusive: Int): Gen[Int] =
+    State(nonNegativeInt).map(x => x % stopExclusive + start)
+    // State.get.map(x => (x.nextInt._1 % stopExclusive + start))
 
   // Exercise 6
 
-  def unit[A] (a: =>A): Gen[A] =
-    ???
+  def unit[A](a: => A): Gen[A] =
+    // State(rng => (a, rng))
+    State.unit(a)
 
   def boolean: Gen[Boolean] =
-    ???
+    State(RNG.boolean)
 
   def double: Gen[Double] =
-    ???
+    State(RNG.double)
+
+  def double1: Gen[Double] =
+    State[RNG, (Double, Int)](RNG.randDoubleInt).map((d, i) => d + i)
 
   // Exercise 7
 
   extension [A](self: Gen[A])
-
     def listOfN(n: Int): Gen[List[A]] =
-      ???
+      State.sequence(List.fill(n)(self))
 
   // Exercise 8
 
@@ -93,11 +102,11 @@ object Gen:
 
     def flatMap[B](f: A => Gen[B]): Gen[B] =
       ???
+      // self.flatMap(f)
 
     // It will be convenient to also have map (uses flatMap)
     def map[B](f: A => B): Gen[B] =
       self.flatMap { a => unit(f(a)) }
-
 
   // Exercise 10
 
@@ -105,11 +114,10 @@ object Gen:
     def listOf(size: Gen[Int]): Gen[List[A]] =
       ???
 
-
   // Exercise 11
 
   extension [A](self: Gen[A])
-    def union (that: Gen[A]): Gen[A] =
+    def union(that: Gen[A]): Gen[A] =
       ???
 
 end Gen
@@ -129,7 +137,7 @@ object Exercise_12:
   def listOfN_[A: Gen]: Int => Gen[List[A]] =
     ???
 
-  def listOfN__ [A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
+  def listOfN__[A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
     ???
 
   // Choose one of the following templates, but note only listOfN and
@@ -138,11 +146,10 @@ object Exercise_12:
   def listOf[A: Gen](using genInt: Gen[Int]): Gen[List[A]] =
     ???
 
-  def listOf_[A] (using genInt: Gen[Int], genA: Gen[A]): Gen[List[A]] =
+  def listOf_[A](using genInt: Gen[Int], genA: Gen[A]): Gen[List[A]] =
     ???
 
 end Exercise_12
-
 
 // (Exercise 13)
 // Read the code below (and/or Section 8.1.6). You will find the
@@ -164,7 +171,7 @@ enum Result:
   case Falsified(failure: FailedCase, successes: SuccessCount)
 
   def isFalsified: Boolean = this match
-    case Passed => false
+    case Passed          => false
     case Falsified(_, _) => true
 
 end Result
@@ -178,8 +185,8 @@ def randomLazyList[A](g: Gen[A])(rng: RNG): LazyList[A] =
 
 def buildMsg[A](s: A, e: Exception): String =
   s"test case: $s\n" +
-  s"generated an exception: ${e.getMessage}\n" +
-  s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
+    s"generated an exception: ${e.getMessage}\n" +
+    s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
 def forAll[A](as: Gen[A])(f: A => Boolean): Prop =
   (max, n, rng) =>
@@ -187,19 +194,18 @@ def forAll[A](as: Gen[A])(f: A => Boolean): Prop =
       .zip(LazyList.from(0))
       .take(n)
       .map { (a, i) =>
-             try if f(a) then Passed else Falsified(a.toString, i)
-             catch case e: Exception => Falsified(buildMsg(a, e), i) }
+        try if f(a) then Passed else Falsified(a.toString, i)
+        catch case e: Exception => Falsified(buildMsg(a, e), i)
+      }
       .find(_.isFalsified)
       .getOrElse(Passed)
 
 def forAllNotSized[A] = forAll[A]
 
 extension (self: Prop)
-  infix def && (that: Prop): Prop = (maxSize, tcs, rng) =>
-    ???
+  infix def &&(that: Prop): Prop = (maxSize, tcs, rng) => ???
 
-  infix def || (that: Prop): Prop = (maxSize, tcs, rng) =>
-    ???
+  infix def ||(that: Prop): Prop = (maxSize, tcs, rng) => ???
 
   def apply(maxSize: MaxSize, tcs: TestCases, rng: RNG): Result =
     self(maxSize, tcs, rng)
@@ -209,8 +215,7 @@ extension (self: Prop)
 /** The type of generators bounded by size */
 opaque type SGen[+A] = Int => Gen[A]
 
-extension [A](self: SGen[A])
-  def apply(n: Int): Gen[A] = self(n)
+extension [A](self: SGen[A]) def apply(n: Int): Gen[A] = self(n)
 
 extension [A](self: Gen[A])
   def unsized: SGen[A] =
@@ -235,29 +240,36 @@ object SGen:
 
     def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
       (max, n, rng) =>
-        val casesPerSize = (n.toInt - 1)/max.toInt + 1
+        val casesPerSize = (n.toInt - 1) / max.toInt + 1
         val props: LazyList[Prop] =
-          LazyList.from(0)
+          LazyList
+            .from(0)
             .take((n.toInt min max.toInt) + 1)
             .map { i => forAllNotSized(g(i))(f) }
         val prop: Prop =
-          props.map[Prop](p => (max, n, rng) =>
-            p(max, casesPerSize, rng)).toList.reduce(_ && _)
+          props
+            .map[Prop](p => (max, n, rng) => p(max, casesPerSize, rng))
+            .toList
+            .reduce(_ && _)
         prop(max, n, rng)
 
   extension (self: Prop)
     def run(
-      maxSize: MaxSize = 100,
-      testCases: TestCases = 100,
-      rng: RNG = RNG.Simple(System.currentTimeMillis)): Boolean =
-
+        maxSize: MaxSize = 100,
+        testCases: TestCases = 100,
+        rng: RNG = RNG.Simple(System.currentTimeMillis)
+    ): Boolean =
       self(maxSize, testCases, rng) match
-      case Result.Falsified(msg, n) =>
-        println(s"\u001b[34m! Falsified after $n passed tests:\n $msg [message from our Prop framework]")
-        false
-      case Result.Passed =>
-        println(s"\u001b[34m+ OK, passed $testCases tests. [message from our Prop framework]")
-        true
+        case Result.Falsified(msg, n) =>
+          println(
+            s"\u001b[34m! Falsified after $n passed tests:\n $msg [message from our Prop framework]"
+          )
+          false
+        case Result.Passed =>
+          println(
+            s"\u001b[34m+ OK, passed $testCases tests. [message from our Prop framework]"
+          )
+          true
 
 end SGen
 
