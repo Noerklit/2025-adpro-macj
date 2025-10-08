@@ -68,7 +68,7 @@ object Gen:
 
   // Exercise 5
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
-    State(nonNegativeInt).map(x => x % stopExclusive + start)
+    State(nonNegativeInt).map(x => (x % (stopExclusive - start)) + start)
     // State.get.map(x => (x.nextInt._1 % stopExclusive + start))
 
   // Exercise 6
@@ -80,11 +80,14 @@ object Gen:
   def boolean: Gen[Boolean] =
     State(RNG.boolean)
 
-  def double: Gen[Double] =
-    State(RNG.double)
+  // def double: Gen[Double] =
+  //   State(RNG.double)
 
-  def double1: Gen[Double] =
+  def double: Gen[Double] =
     State[RNG, (Double, Int)](RNG.randDoubleInt).map((d, i) => d + i)
+
+  // def double: Gen[Double] =
+  // State(RNG.double).map(d => d * 2 - 1)
 
   // Exercise 7
 
@@ -99,10 +102,11 @@ object Gen:
   // Exercise 9
 
   extension [A](self: Gen[A])
-
     def flatMap[B](f: A => Gen[B]): Gen[B] =
-      ???
-      // self.flatMap(f)
+      State { rng => 
+        val (a, rng1) = self.run(rng) 
+        f(a).run(rng1)
+      }
 
     // It will be convenient to also have map (uses flatMap)
     def map[B](f: A => B): Gen[B] =
@@ -112,13 +116,13 @@ object Gen:
 
   extension [A](self: Gen[A])
     def listOf(size: Gen[Int]): Gen[List[A]] =
-      ???
+      size.flatMap(listOfN(self))
 
   // Exercise 11
 
   extension [A](self: Gen[A])
     def union(that: Gen[A]): Gen[A] =
-      ???
+      boolean.flatMap( b => if b then self else that)
 
 end Gen
 
@@ -132,22 +136,22 @@ object Exercise_12:
   // listOf are tested (so rename if you use another than the first)
 
   def listOfN[A: Gen](n: Int): Gen[List[A]] =
-    ???
+    summon[Gen[A]].listOfN(n)
 
   def listOfN_[A: Gen]: Int => Gen[List[A]] =
-    ???
+    n => summon[Gen[A]].listOfN(n)
 
   def listOfN__[A](n: Int)(using genA: Gen[A]): Gen[List[A]] =
-    ???
+    genA.listOfN(n)
 
   // Choose one of the following templates, but note only listOfN and
   // listOf are tested (so rename if you use another than the first)
 
   def listOf[A: Gen](using genInt: Gen[Int]): Gen[List[A]] =
-    ???
+    summon[Gen[A]].listOf(genInt)
 
   def listOf_[A](using genInt: Gen[Int], genA: Gen[A]): Gen[List[A]] =
-    ???
+    genA.listOf(genInt)
 
 end Exercise_12
 
@@ -203,9 +207,16 @@ def forAll[A](as: Gen[A])(f: A => Boolean): Prop =
 def forAllNotSized[A] = forAll[A]
 
 extension (self: Prop)
-  infix def &&(that: Prop): Prop = (maxSize, tcs, rng) => ???
+  infix def &&(that: Prop): Prop = (maxSize, tcs, rng) => 
+    if self(maxSize, tcs, rng).isFalsified then self(maxSize, tcs, rng) 
+    else if that(maxSize, tcs, rng).isFalsified then that(maxSize, tcs, rng)
+    else Passed
 
-  infix def ||(that: Prop): Prop = (maxSize, tcs, rng) => ???
+  infix def ||(that: Prop): Prop = (maxSize, tcs, rng) =>
+    if !self(maxSize, tcs, rng).isFalsified then Passed 
+    else if !that(maxSize, tcs, rng).isFalsified then Passed 
+    else self(maxSize, tcs, rng) // Could be either self or that here, as we only get here if they both fail
+
 
   def apply(maxSize: MaxSize, tcs: TestCases, rng: RNG): Result =
     self(maxSize, tcs, rng)
@@ -218,14 +229,16 @@ opaque type SGen[+A] = Int => Gen[A]
 extension [A](self: SGen[A]) def apply(n: Int): Gen[A] = self(n)
 
 extension [A](self: Gen[A])
-  def unsized: SGen[A] =
-    ???
+  def unsized: SGen[A] = 
+    n => self
+    
 
 // Exercise 15
 
 extension [A](self: Gen[A])
-  def list: SGen[List[A]] =
-    ???
+  def list: SGen[List[A]] = 
+    n => self.listOfN(n)
+    
 
 // A sized implementation of prop, takes MaxSize to generate
 // test cases of given size.
@@ -287,10 +300,10 @@ object Exercise_16:
   // allow the teachers to test them with different mutants of `minimum`.
 
   def p1Min(minimum: List[Int] => Int): Prop =
-    ???
+    Prop.forAll(nonEmptyList)(l => l.forall(e => e >= minimum(l)))
 
   def p2Min(minimum: List[Int] => Int): Prop =
-    ???
+    Prop.forAll(nonEmptyList)(l => l.exists(e => e == minimum(l)))
 
 end Exercise_16
 
