@@ -12,7 +12,7 @@ val TODO = 42
 
 // Exercise 1
 
-lazy val rng1: RNG = Simple(TODO)
+lazy val rng1: RNG = Simple(42)
 
 // Exercise 2
 
@@ -72,7 +72,6 @@ object Gen:
     // State.get.map(x => (x.nextInt._1 % stopExclusive + start))
 
   // Exercise 6
-
   def unit[A](a: => A): Gen[A] =
     // State(rng => (a, rng))
     State.unit(a)
@@ -207,15 +206,27 @@ def forAll[A](as: Gen[A])(f: A => Boolean): Prop =
 def forAllNotSized[A] = forAll[A]
 
 extension (self: Prop)
-  infix def &&(that: Prop): Prop = (maxSize, tcs, rng) => 
-    if self(maxSize, tcs, rng).isFalsified then self(maxSize, tcs, rng) 
-    else if that(maxSize, tcs, rng).isFalsified then that(maxSize, tcs, rng)
-    else Passed
+  infix def &&(that: Prop): Prop = (maxSize, tcs, rng) =>
+    val p1 = self(maxSize, tcs, rng) 
+    p1 match
+      case p1 if p1.isFalsified => p1
+      case _ => 
+        val p2 = that(maxSize, tcs, rng)
+        if p2.isFalsified then p2 else Passed
+    
+    // The below passes tests, but makes tests later loop forever when building tests cases using this function
+    // if self(maxSize, tcs, rng).isFalsified then self(maxSize, tcs, rng) 
+    // else if that(maxSize, tcs, rng).isFalsified then that(maxSize, tcs, rng)
+    // else Passed
 
   infix def ||(that: Prop): Prop = (maxSize, tcs, rng) =>
-    if !self(maxSize, tcs, rng).isFalsified then Passed 
-    else if !that(maxSize, tcs, rng).isFalsified then Passed 
-    else self(maxSize, tcs, rng) // Could be either self or that here, as we only get here if they both fail
+    self(maxSize, tcs, rng) match
+      case Passed => Passed
+      case _ => that(maxSize, tcs, rng)
+    
+    // if !self(maxSize, tcs, rng).isFalsified then Passed 
+    // else if !that(maxSize, tcs, rng).isFalsified then Passed 
+    // else self(maxSize, tcs, rng) // Could be either self or that here, as we only get here if they both fail
 
 
   def apply(maxSize: MaxSize, tcs: TestCases, rng: RNG): Result =
