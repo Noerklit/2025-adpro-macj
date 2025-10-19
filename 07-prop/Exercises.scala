@@ -95,8 +95,7 @@ object Gen:
       State.sequence(List.fill(n)(self))
 
   // Exercise 8
-
-  // Write here ... ???
+  // Because Gen[A] is an opaque type alias, so it is not possible to define methods inside of it, as it is not a class or a trait. 
 
   // Exercise 9
 
