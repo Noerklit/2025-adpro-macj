@@ -10,7 +10,7 @@ cwk ywk date  topic (reading)
  07  41 07/10 Property-based testing API, prop (ch. 8)
  --  42 --/-- Fall break, no class ------------------------------------------------------
  08  43 21/10 Parser Combinators, parsers (ch. 9)
- 09  44 28/10 Functional Design: Monad, monoid (ch. 10-11)
+ 09  44 28/10 Functional Design: Monad, monoid (ch. 10-11) [no lecture, online video]
  10  45 04/11 Probabilistic Programming (slides)
  11  46 11/11 Language Semantics and Interpretations (paper)
  12  47 18/11 Reinforcement Learning Example (mini project, 2 weeks)
