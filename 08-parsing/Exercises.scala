@@ -7,6 +7,7 @@ import scala.util.matching.Regex
 
 import org.scalacheck.*
 import org.scalacheck.Prop.*
+import adpro.parsing.Result.Failure
 
 // ************************************************************************
 // PART I
@@ -176,16 +177,16 @@ trait Parsers[ParseError, Parser[+_]]:
 
   extension [A](p1: Parser[A]) 
     def map2[B, C](p2: => Parser[B]) (f: (A, B) => C): Parser[C] =
-      ???
+      p1.flatMap { a => p2.flatMap { b => succeed(f(a,b))}}
 
     def product[B] (p2: => Parser[B]): Parser[(A,B)] =
-      ???
+      p1.flatMap { a => p2.flatMap { b => succeed(a,b)}}
 
     // Write here: 
     //
-    // (1) ...
+    // (1) Because it is an extension of the p1 parser which has A?
     //
-    // (2) ...
+    // (2) Have to check what by-name as an argument means
 
     def **[B](p2: => Parser[B]): Parser[(A, B)] = 
       p1.product(p2)
@@ -203,38 +204,43 @@ trait Parsers[ParseError, Parser[+_]]:
 
   extension [A](p: Parser[A]) 
     def many: Parser[List[A]] = 
-      ???
+      p.map2(p.many)((head, tail) => head :: tail).or(succeed(List()))
 
   // Exercise 3
 
   extension [A](p: Parser[A])
     def map[B](f: A => B): Parser[B] =
-      ???
+      p.flatMap { a => succeed(f(a))}
 
   // Exercise 4
 
   // A better name would be: howManyA
   def manyA: Parser[Int] =
-    ???
+    many(string("a")).map(_.length)
 
   // Exercise 5
   
   extension [A](p: Parser[A]) 
     def many1: Parser[List[A]] =
-      ???
+      p.map2(p.many)((head, tail) => head :: tail)
       
   // Write here ...
 
   // Exercise 6
 
   extension [A](p: Parser[A]) 
-    def listOfN(n: Int): Parser[List[A]] =
-      ???
+    def listOfN(n: Int): Parser[List[A]] = 
+      n match 
+        case 0 => succeed(List())
+        case _ => p.map2(p.listOfN(n-1))((head, tail) => head :: tail)
 
   // Exercise 7
 
   def digitTimesA: Parser[Int] =
-    ???
+    regex("[0-9]".r).flatMap { digit => 
+      val n = digit.toInt
+      (string("a").listOfN(n).map(_=> n))
+      }
 
   // For Exercise 8 read the code below until you find it.
 
