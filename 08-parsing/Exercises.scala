@@ -421,7 +421,7 @@ object Sliceable
 
   /** Consume no characters and succeed with the given value */
   def succeed[A](a: A): Parser[A] =
-    ???
+    (state: ParseState) => Success(a, 0)
 
   // For Exercise 9 continue reading below
 
@@ -481,13 +481,21 @@ object Sliceable
   // Exercise 9
  
   extension [A](p: Parser[A]) 
-    def or(p2: => Parser[A]): Parser[A] =
-      ???
+    def or(p2: => Parser[A]): Parser[A] =  
+      (state: ParseState) => p(state) match
+        case Success(get, length) => Success(get, length) 
+        case _ => p2(state)
+      
+    
 
   // Exercise 10
 
   def regex(r: Regex): Parser[String] = (s: ParseState) =>
-    ???
+    r.findPrefixOf(s.loc.remaining) match
+      case Some(value) => 
+        if s.isSliced then Slice(value.length()) else Success(value, value.length()) 
+      case None => Failure(s.loc.toError("Regex did not find match"), false) 
+    
    
 end Sliceable
 
@@ -522,7 +530,7 @@ class JSONParser[ParseError, Parser[+_]](P: Parsers[ParseError,Parser]):
   lazy val ws: Parser[Unit] =
     ???
 
-  // Exercise 13
+  // Exercise 12
   
   lazy val jnull: Parser[JSON] =
     ???
