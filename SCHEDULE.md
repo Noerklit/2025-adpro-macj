@@ -14,8 +14,8 @@ cwk ywk date  topic (reading)
  10  45 04/11 Probabilistic Programming (slides)
  11  46 11/11 Language Semantics and Interpretations (paper)
  12  47 18/11 Reinforcement Learning Example (mini project, 2 weeks)
- 13  48 25/11 Reinforcement Learning Example (mini project, 2 weeks, no lectures)
- 14  49 02/12 Lenses (papers, see reading list) [or we do some other topic?]
+ 13  48 25/11 Let's talk about the exam      (mini project, 2 weeks)
+ 14  49 02/12 Lenses (papers, see reading list)
 --.  -- 05/01 Ordinary Exam - on premises Mon, 5 Jan 2026, 09:00 - 13:00
 -----------------------------------------------------------------------------------------
 ```
