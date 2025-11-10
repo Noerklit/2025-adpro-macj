@@ -522,47 +522,49 @@ class JSONParser[ParseError, Parser[+_]](P: Parsers[ParseError,Parser]):
   // Exercise 11
 
   lazy val QUOTED: Parser[String] =
-    ???
+    regex(""""[^"]*"""".r).map(_.drop(1).dropRight(1))
 
   lazy val DOUBLE: Parser[Double] =
-    ???
+    regex("""(\+|-)?[0-9]+(\.[0-9]+((e|E)(-|\+)?[0-9]+)?)?""".r)
+      .map { _.toDouble}
 
   lazy val ws: Parser[Unit] =
-    ???
+    regex("""\s+""".r).map { _ => ()}
 
   // Exercise 12
   
   lazy val jnull: Parser[JSON] =
-    ???
+    string("null") |* ws.? |* succeed(JNull)
 
   lazy val jbool: Parser[JSON] =
-    ???
+    (string("true") |* ws.? |* succeed(JBool(true))) | 
+    (string("false") |* ws.? |* succeed(JBool(false)))
 
   lazy val jstring: Parser[JString] =
-    ???
+    { QUOTED *|ws.?}.map { JString(_)}
 
   lazy val jnumber: Parser[JNumber] =
-    ??? 
+    { DOUBLE *| ws.?} .map { JNumber(_)}
 
   // Exercise 13
 
   private lazy val commaSeparatedVals: Parser[List[JSON]] =
-    ???
+    json.map2((char(',') |* ws.? |* json).many)(_::_).or(succeed(List()))
 
   lazy val jarray: Parser[JArray] =
-    ???
+    { char('[') |* ws.? |* commaSeparatedVals *| ws.? *| char(']') *| ws.? }.map { l => JArray(l.toVector)}
 
   lazy val field: Parser[(String,JSON)] =
-    ???
+    QUOTED *| ws.? *| char(':') *| ws.? ** json
 
   private lazy val commaSeparatedFields: Parser[List[(String,JSON)]] =
-    ???
+    field.map2((char(',') |* ws.? |* field).many)(_::_).or(succeed(List()))
 
   lazy val jobject: Parser[JObject] =
-    ???
+    { char('{') |* ws.? |* commaSeparatedFields *| ws.? *| char('}') *| ws.? }.map {l => JObject(l.toMap)}
 
   lazy val json: Parser[JSON] =
-    ???
+    ws.? |* { jobject | jarray | jnumber | jstring | jbool | jnull }
 
   // Exercise 14 (no code)
 
