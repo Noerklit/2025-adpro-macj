@@ -12,7 +12,7 @@ cwk ywk date  topic (reading)
  08  43 21/10 Parser Combinators, parsers (ch. 9)
  09  44 28/10 Functional Design: Monad, monoid (ch. 10-11) [no lecture, online video]
  10  45 04/11 Probabilistic Programming (slides)
- 11  46 11/11 Language Semantics and Interpretations (paper)
+ 11  46 11/11 Language Semantics and Interpretations (paper, sections 1-3)
  12  47 18/11 Reinforcement Learning Example (mini project, 2 weeks)
  13  48 25/11 Let's talk about the exam      (mini project, 2 weeks)
  14  49 02/12 Lenses (papers, see reading list)
