@@ -57,7 +57,7 @@ println (s"Pr. of a prime and odd outcome: $probPrimeAndOdd (dependent)")
 val primeAndOddViaComposition = 
   Pigaro // detDep -> deterministic dependent variable
    .uniform("die")         (1, 2, 3, 4, 5, 6)
-   .detDep ("prime")       { n => n == 2 || n == 3 | n == 5 }
+   .detDep ("prime")       { n => n == 2 || n == 3 || n == 5 }
    .detDep ("odd")         { (n, prime) => n % 2 == 1 }
    .detDep ("prime & odd") { (n, prime, odd) => prime && odd }
 
@@ -77,16 +77,16 @@ println(s"Pr. of a prime given an odd: ${probPrimeAndOdd / probOdd} (manual)")
 
 
 // The same obtained via conditioning
-val primeGivenOdd = Pigaro
+val oddGivenPrime = Pigaro
   .uniform("die")       (1, 2, 3, 4, 5, 6)
   .detDep ("prime")     { n => n == 2 || n == 3 || n == 5 }
   .detDep ("odd")       { (d, prime) => d % 2 == 1 }
-  .condition            { _._3 }
-  .map    ("prime|odd") { (n, prime, odd) => prime }
+  .condition            { _._2 }
+  .map    ("prime|odd") { (n, prime, odd) => odd }
 
-val probPrimeGivenOdd = 
-  primeGivenOdd.sample(N).pr(true) 
-println(s"Pr. of a prime given an odd: $probPrimeGivenOdd (auto)")
+val probOddGivenPrime = 
+  oddGivenPrime.sample(N).pr(true) 
+println(s"Pr. of a odd given prime: $probOddGivenPrime (auto)")
 
 enum Child:
   case Boy, Girl
@@ -101,7 +101,7 @@ val S = child -> child
 val E: Dist[Boolean] = 
   S.map { case (Boy,Boy) => true; case _ => false }
 val F: Dist[Boolean] = 
-  S.map { case (f,s) => f == Boy || s == Boy }
+  S.map { (f,s) => f == Boy || s == Boy }
 
 val prE = E.sample(N).pr(true)
 val prF = F.sample(N).pr(true)
@@ -117,7 +117,7 @@ println(s"Pr. of two Boys given at least one boy: ${prE/prF}")
 val model1 = Pigaro
   .uniform ("fst") (Boy, Girl)
   .uniform ("snd") (Boy, Girl)
-  .condition       { case (fs,sn) => fs == Boy || sn == Boy }
+  .condition       { (fs: Child,sn: Child) => fs == Boy || sn == Boy }
 
 val prBBGivenBoy = 
   model1.sample(N).prMatching { case (Boy,Boy) => }
