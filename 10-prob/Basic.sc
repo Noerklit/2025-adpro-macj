@@ -65,7 +65,7 @@ println(primeAndOddViaComposition.sample(4))
 
 val probPrimeAndOddViaComposition = 
   primeAndOddViaComposition
-   ._4
+   ._4 //Just select the 4 component and forget everything else, in this case prime && odd. Overloaded method
    .sample(N)
    .pr{ true }
 
@@ -81,8 +81,8 @@ val oddGivenPrime = Pigaro
   .uniform("die")       (1, 2, 3, 4, 5, 6)
   .detDep ("prime")     { n => n == 2 || n == 3 || n == 5 }
   .detDep ("odd")       { (d, prime) => d % 2 == 1 }
-  .condition            { _._2 }
-  .map    ("prime|odd") { (n, prime, odd) => odd }
+  .condition            { _._3 } //I am only interested in samples that satisfy the third column
+  .map    ("prime|odd") { (n, prime, odd) => prime }
 
 val probOddGivenPrime = 
   oddGivenPrime.sample(N).pr(true) 
