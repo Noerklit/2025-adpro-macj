@@ -134,13 +134,35 @@ object ExceptionEvaluator:
   given mIsMonad: Monad[M] = 
     new: 
       def unit[A](a: => A): M[A] = Return(a)
-      
+      extension [A](fa: M[A]) 
+        override def flatMap[B](f: A => M[B]): M[B] = fa match
+          case Raise(e) => Raise(e)
+          case Return(a) => f(a)
+         
 
   // Exercise 3
-  def evalMonad(term: Term): M[Int] = ???
+  def evalMonad(term: Term): M[Int] = term match
+    case Cons(a) => mIsMonad.unit(a)
+    case Div(left, right) => 
+      mIsMonad.flatMap(evalMonad(left)) { lval => 
+        mIsMonad.flatMap(evalMonad(right)) { rval => 
+          if rval == 0 then Raise("Division by 0")
+          else mIsMonad.unit(lval/rval)
+        }
+      }
+
 
   // Exercise 4
-  def evalForYield(term: Term): M[Int] = ???
+  def evalForYield(term: Term): M[Int] = term match
+    case Cons(a) => mIsMonad.unit(a) 
+    case Div(left, right) => 
+      for 
+      lval <- evalForYield(left)
+      rval <- evalForYield(right)
+      result <- if rval == 0
+        then Raise("Division by 0")
+        else mIsMonad.unit(lval/rval)
+      yield result
 
 end ExceptionEvaluator
 
