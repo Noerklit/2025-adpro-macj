@@ -119,10 +119,22 @@ object ExceptionEvaluator:
 
   import M.*
 
-  def eval(term: Term): M[Int] = ???
+  def eval(term: Term): M[Int] = term match
+    case Cons(a) => Return(a)
+    case Div(left, right) => eval(left) match
+      case Raise(e) => Raise(e)
+      case Return(lval) => eval(right) match
+        case Raise(e) => Raise(e)
+        case Return(rval) => 
+          if rval == 0 then Raise("Division by 0")
+          else Return(lval/rval) 
+      
 
   // Exercise 2
-  given mIsMonad: Monad[M] = ???
+  given mIsMonad: Monad[M] = 
+    new: 
+      def unit[A](a: => A): M[A] = Return(a)
+      
 
   // Exercise 3
   def evalMonad(term: Term): M[Int] = ???
