@@ -5,8 +5,7 @@ package adpro.prob
 import pigaro.*
 
 // Used by samplers
-given rng: spire.random.rng.SecureJava
-  = spire.random.rng.SecureJava.apply
+given rng: spire.random.rng.SecureJava = spire.random.rng.SecureJava.apply
 
 // All the exercise text is included below in comments (no PDF file
 // this week).
@@ -121,7 +120,8 @@ def probPeterStarts: Double =
   move(Peter, BallsNo- 1).sample(M).pr(Paula)
 
 //  Which strategy is beter for Paula? What if BallsNo == 9?
-//  Write your answer here in a comment: ___
+//  Write your answer here in a comment: Starting is the best strategy, with even balls both have an equal chance
+//  of winning, but if the number of balls are odd, the game favors the person that starts.
 
 
 // Exercise 4.
@@ -167,7 +167,7 @@ def gameResult: Dist[(Player, Player)] =
 
 // What is the probability that Paula wins with this uniform prior? Does it
 // agree with your intuition? Write the answer in a comment:
-// ____
+// The probability should be around 50%
 
 // Now we are going to make the observation that Paula wins.
 
@@ -227,11 +227,8 @@ lazy val blackBallsNo: Dist[Int] =
 
 // There is no test for this step of the computation.
 
-def outcome: Dist[(Int, Player)] =
-  blackBallsNo._flatMap({nrballs => move(Paula, nrballs)})
-
-// def outcome: Dist[(Int, Player)] =
-//   blackBallsNo.probDep({nrBalls => move(Paula, nrBalls)})
+def outcome:Dist[(Int, Player)] =
+  blackBallsNo._flatMap({nrBalls => move(Paula, nrBalls)})
 
 // The following asserts that Paula has won.
 
@@ -246,13 +243,15 @@ lazy val paulaWon: Dist[(Int, Player)] =
 // IData[T].pr (p: T => Boolean)
 // IData[T].prMatching  { case ... => }
 
+
 lazy val posteriorOdd: Double =
-  paulaWon.sample(M).prMatching({case (blackballsnr, _) => (blackballsnr + 1)  % 2 == 1 })
+  paulaWon.sample(M).pr[(Int, Player)] {(noOfBlackBalls, _) => (noOfBlackBalls+1) %2 ==1}
 
 
 // Is the posteriorOdd greater than 1/2? Why?
 //
-// 
+// It is greater than 1/2 which makes sense as Paula is more favored to win when she starts and the number of
+// balls are odd, therefore we expect her to have won more than half the games when an odd number of balls was present
 
 
 // Reflect whether the above estimation would take you more time analytically
