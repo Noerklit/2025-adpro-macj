@@ -218,7 +218,7 @@ val UpperBound = 6
 // Pigaro.uniform[A](name: String)(a : A*) :Element[A]
 
 lazy val blackBallsNo: Dist[Int] =
-  ???
+  Pigaro.uniform("distribution of black balls")(0,1,2,3,4,5)
 
 // Now convert the prior distribution on the initial number of black balls in
 // the urn, into a distribution over the winning player.  Since the game is
@@ -228,12 +228,15 @@ lazy val blackBallsNo: Dist[Int] =
 // There is no test for this step of the computation.
 
 def outcome: Dist[(Int, Player)] =
-  ???
+  blackBallsNo._flatMap({nrballs => move(Paula, nrballs)})
+
+// def outcome: Dist[(Int, Player)] =
+//   blackBallsNo.probDep({nrBalls => move(Paula, nrBalls)})
 
 // The following asserts that Paula has won.
 
 lazy val paulaWon: Dist[(Int, Player)] =
-  ???
+  outcome.matching{case (_,Paula) => }
 
 // Now define the posterior probabilities for all size of the urn from 1 to
 // UpperBound. You can do this using IData.pr.
@@ -244,11 +247,12 @@ lazy val paulaWon: Dist[(Int, Player)] =
 // IData[T].prMatching  { case ... => }
 
 lazy val posteriorOdd: Double =
-  ???
+  paulaWon.sample(M).prMatching({case (blackballsnr, _) => (blackballsnr + 1)  % 2 == 1 })
+
 
 // Is the posteriorOdd greater than 1/2? Why?
 //
-// _____
+// 
 
 
 // Reflect whether the above estimation would take you more time analytically
