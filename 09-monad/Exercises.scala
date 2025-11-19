@@ -59,30 +59,54 @@ def listMonoid[A] = new Monoid[List[A]]:
 
 // Exercise 1
 
-lazy val intAddition: Monoid[Int] = ???
+lazy val intAddition: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1 + a2
+  def empty: Int = 0
 
-lazy val intMultiplication: Monoid[Int] = ???
+lazy val intMultiplication: Monoid[Int] = new Monoid[Int]:
+  def combine(a1: Int, a2: Int): Int = a1 * a2
+  def empty: Int = 1
 
-lazy val booleanOr: Monoid[Boolean] = ???
+lazy val booleanOr: Monoid[Boolean] = new Monoid[Boolean]:
+  def combine(a1: Boolean, a2: Boolean): Boolean = a1 || a2
+  def empty: Boolean = false 
+  //If a1 is false, the only way to ensure we return false is if a2 is false, if a1 is true, a2 could be either true or false
+  //For monoids the empty case is the identity element, logic is easier understood if u look at the case for addition or multiplication
 
-lazy val booleanAnd: Monoid[Boolean] = ???
+lazy val booleanAnd: Monoid[Boolean] = new Monoid[Boolean]:
+  def combine(a1: Boolean, a2: Boolean): Boolean = a1 && a2
+  def empty: Boolean = true
 
 
 // Exercise 2
 
 // a)
 
-def optionMonoid[A]: Monoid[Option[A]] = ???
-
-
+def optionMonoid[A]: Monoid[Option[A]] = new Monoid[Option[A]]:
+  def combine(a1: Option[A], a2: Option[A]): Option[A] = a1 match //Should probably be done with something smarter than match case?
+    case Some(value) => a1
+    case None => a2 match
+      case Some(value) => a2
+      case None => None
+  def empty: Option[A] = None
+    
 // b)
 
-def optionMonoidLift[A: Monoid]: Monoid[Option[A]] = ???
+def optionMonoidLift[A: Monoid]: Monoid[Option[A]] = new Monoid[Option[A]]:
+  def combine(a1: Option[A], a2: Option[A]): Option[A] = 
+    (a1, a2) match
+      case (Some(v1), Some(v2)) => Some(monoid.combine(v1, v2))
+      case (Some(v1), None) =>  Some(v1)
+      case (None, Some(v2)) => Some(v2)
+      case (_, _) => None
+  def empty: Option[A] = None
 
 
 // Exercise 3
 
-def endoMonoid[A]: Monoid[A => A] = ???
+def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A]:
+  def combine(a1: A => A, a2: A => A): A => A = a1.andThen(a2)
+  def empty: A => A = identity(summon)
 
 
 // Exercise 4 (tests exercises 1-2, written by student)
@@ -91,22 +115,23 @@ object MonoidEx4Spec
   extends org.scalacheck.Properties("exerc4"):
 
   property("Ex04.01: intAddition is a monoid") =
-    ???
+    intAddition.laws.monoid
 
   property("Ex04.02: intMultiplication is a monoid") =
-    ???
+    intMultiplication.laws.monoid
 
   property("Ex04.03: booleanOr is a monoid") =
-    ???
+    booleanOr.laws.monoid
 
   property("Ex04.04: booleanAnd is a monoid") =
-    ???
+    booleanAnd.laws.monoid
 
   property("Ex04.05: optionMonoid is a monoid") =
-    ???
+    optionMonoid[String].laws.monoid
 
   property("Ex04.06: optionMonoidLift is a monoid") =
-    ???
+    given Monoid[Int] = intAddition
+    optionMonoidLift[Int].laws.monoid
 
 end MonoidEx4Spec
 
