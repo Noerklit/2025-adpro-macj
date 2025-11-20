@@ -143,7 +143,8 @@ end MonoidEx4Spec
 
 extension [B](mb: Monoid[B])
   def foldMap[A](as: List[A])(f: A => B): B =
-    ???
+    as.map(f).foldLeft((mb.empty))((v1, v2) => mb.combine(v1, v2))
+    // as.map(f).foldRight((mb.empty))((v1, v2) => mb.combine(v1, v2))
 
 
 // Exercise 6
@@ -157,11 +158,16 @@ extension [B](mb: Monoid[B])
 extension [A: {Arbitrary, Equality}](ma: Monoid[A])
 
   def homomorphism[B](f: A => B)(mb: Monoid[B]): Prop =
-    ???
+    forAll { (x: A, y: A) => 
+      f(ma.combine(x,y)) === mb.combine(f(x), f(y))} && 
+      f(ma.empty) === mb.empty
 
   def isomorphism[B: Arbitrary](f: A => B, g: B => A)(mb: Monoid[B]): Prop =
-    ???
-
+    forAll { (x: A, y: B) => 
+      homomorphism(f)(mb) && 
+      mb.homomorphism(g)(ma) &&
+      g(f(x)) === x && f(g(y)) === y
+      }
 
 // Exercise 7 (tests for Exercise 6, written by the student)
 
@@ -169,7 +175,7 @@ object MonoidEx7Spec
   extends org.scalacheck.Properties("exerc7"):
 
   property("Ex07.01: stringMonoid is isomorphic to listMonoid[Char]") =
-    ???
+    stringMonoid.isomorphism((s => s.toList), (lst => lst.mkString))(listMonoid)
 
 
 // "Exercise 8 (tests for Exercise 1, written the by student)
