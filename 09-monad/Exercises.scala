@@ -184,12 +184,14 @@ object MonoidEx8Spec
   extends org.scalacheck.Properties("exerc8"):
 
   property("Ex08.01: booleanOr is isomorphic to booleanAnd") =
-    ???
+    booleanOr.isomorphism((b1 => !b1), (b2 => !b2))(booleanAnd)
 
 
 // Exercise 9
 
-def productMonoid[A, B](ma: Monoid[A])(mb: Monoid[B]) = ???
+def productMonoid[A, B](ma: Monoid[A])(mb: Monoid[B]) = new Monoid[(A, B)]:
+  def combine(a1: (A, B), a2: (A, B)): (A, B) = (ma.combine(a1._1, a2._1), mb.combine(a1._2, a2._2))
+  def empty: (A, B) = (ma.empty, mb.empty)
 
 
 // Exercise 10 (tests for Exercise 9, written by the student)
