@@ -200,7 +200,7 @@ object MonoidEx10Spec
   extends org.scalacheck.Properties("exer10"):
 
   property("Ex10.01: productMonoid(optionMonoid[Int])(listMonoid[String]) gives a monoid") =
-    ???
+    productMonoid(optionMonoid[Int])(listMonoid[String]).laws.monoid
 
 
 /* This will be used in the Foldable below: We can get the dual of any monoid
@@ -235,7 +235,10 @@ end Foldable
 
 // Exercise 11
 
-given foldableList: [A] => Foldable[List] = ???
+given foldableList: [A] => Foldable[List] = new Foldable[List]:
+  extension [A](as: List[A]) def foldMap[B](f: A => B)(using mb: Monoid[B]): B = 
+    as.map(f).foldLeft(mb.empty)((v1, v2) => mb.combine(v1, v2))
+  
 
 
 // Exercise 12
@@ -243,10 +246,14 @@ given foldableList: [A] => Foldable[List] = ???
 // Note since Foldable[F] is a given, its extensions for as are visible
 // (https://docs.scala-lang.org/scala3/reference/contextual/extension-methods.html)
 
+// I dont understand this particular exercise at all
 extension [F[_]: Foldable, A] (as: F[A])
   def toList: List[A] = as.toListF
-  def toListF: List[A] =
-    ???
+  def toListF: List[A] = 
+    as.foldRight(Nil)(_::_)
+    // as.foldLeft(Nil: List[A])((list, a) => a :: list)
+    // given Monoid[List[A]] = listMonoid[A]
+    // as.foldMap(a => List(a))
 
 
 
@@ -281,8 +288,9 @@ end Functor
 
 // Exercise 13
 
-lazy val optionFunctor: Functor[Option] = ???
-
+lazy val optionFunctor: Functor[Option] = new Functor[Option]:
+  extension [A](fa: Option[A]) def map[B](f: A => B): Option[B] =
+    fa.map(f)
 
 // this instance is provided
 val listFunctor: Functor[List] = new:
@@ -298,7 +306,7 @@ object FunctorEx14Spec
   // Exercise 14
 
   property("Ex14.02: optionFunctor satisfies map law (tests Exercise 13)") =
-    ???
+    optionFunctor.functorLaws.map[Int] //Should work with any type as I understand it
 
 end FunctorEx14Spec
 
@@ -361,9 +369,15 @@ end Monad
 
 // Exercise 15
 
-lazy val optionMonad: Monad[Option] = ???
+lazy val optionMonad: Monad[Option] = new Monad[Option]:
+  def unit[A](a: => A): Option[A] = Some(a)
+  extension [A](fa: Option[A]) def flatMap[B](f: A => Option[B]): Option[B] =
+    fa.flatMap(f)
 
-lazy val listMonad: Monad[List] = ???
+lazy val listMonad: Monad[List] = new Monad[List]:
+  def unit[A](a: => A): List[A] = List(a)
+  extension [A](fa: List[A]) def flatMap[B](f: A => List[B]): List[B] =
+    fa.flatMap(f)
 
 
 // Exercise 16 (tests for Exercise 15, written by the student)
@@ -372,10 +386,10 @@ object FunctorEx16Spec
   extends org.scalacheck.Properties("exer16"):
 
   property("Ex16.01: optionMonad is a monad") =
-    ???
+    optionMonad.monadLaws.monad[Int, Int, Int] // Any concrete types again I think?
 
   property("Ex16.02: listMonad is a monad") =
-    ???
+    listMonad.monadLaws.monad[Int, Int, Int]
 
 end FunctorEx16Spec
 
