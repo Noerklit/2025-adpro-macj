@@ -19,13 +19,13 @@ object Q1:
    * to mix languages in the exam.  Recall that in Java all method
    * calls are virtual, so dynamically dispatched.
    *
-   * abstract class Printable: 
+   * abstract class Printable:
    *   def hello(): String = "printable"
    *
-   * class Triangle extends Printable:  
+   * class Triangle extends Printable:
    *   override def hello(): String = "triangle"
    *
-   * class Square extends Printable: 
+   * class Square extends Printable:
    *   override def hello(): String = "square"
    *
    * Now the following is an ADT in Scala, that realizes the same hierarchy:
@@ -71,7 +71,7 @@ object Q2:
           a  <- ea
       yield a::as
     }
- 
+
   // A solution without for-yield:
 
   def f[Err, A](ea: Either[Err, A], eas: Either[Err, List[A]]): Either[Err, List[A]] =
@@ -91,7 +91,7 @@ object Q2:
   // - I think using foldLeft is likely returning the first, not the last error.
   // - Also direct recursion with a tail-recursive accumulator trick is likely
   //   giving the first error.
-  // - A translation to Option is lo0sing the information about failures.
+  // - A translation to Option is losing the information about failures.
   //
   // There is this solution easy to find online:
   // https://stackoverflow.com/questions/7230999/how-to-reduce-seqeithera-b-to-eithera-seqb
@@ -221,7 +221,7 @@ object Q5: // Scala-2 style solution
   // ...
 
   // (the question continues below)
-  
+
   // This solution allows to convert any State.Rand[A] value to an RNG.Rand[A]
   // value implicitly, and then all methods of RNG.Rand[A] methods can be
   // called.
@@ -250,8 +250,8 @@ object Q5: // Scala-2 style solution
   // methods for state that are forwarded to RNG.Rand.  This is more work but
   // has other advantages so should get full points (no issues with cyclicity of
   // implicits).
-  // 
-  // Note 2022: this longer solution is also a clean solution in Scala3 but 
+  //
+  // Note 2022: this longer solution is also a clean solution in Scala3 but
   // would require more work than anticipated.
   //
   // Delegating just the both function is a passable solution, but weak.
@@ -435,14 +435,14 @@ end Q10
  */
 
  // Write here ...
- 
+
  // This function takes a computation whose construction might have failed (the
  // computation might not be there, be triviallly None), and rewraps it into a
  // computation that produces an optional value A.  This allows composing the
  // result into a larger parallel computation expression.
- 
- 
- 
+
+
+
 object Q12:
 
   /*** MONADS
@@ -478,7 +478,7 @@ object Q12:
    *     result = result + l.head
    *     l = l.tail
    *   return result
-   * 
+   *
    *
    * Q12. (10%)
    *
@@ -532,18 +532,18 @@ object Q13:
    */
 
   // Both solutions below are fine
-  
+
   def loop_[A, M[_]: Monad](initial: M[A])(body: A => A)(p: A => Boolean): M[A] =
     for
       a      <- initial
-      result <- if p(a) 
-                then loop_ (summon[Monad[M]].unit(body(a)))(body)(p) 
+      result <- if p(a)
+                then loop_ (summon[Monad[M]].unit(body(a)))(body)(p)
                 else initial
     yield result
 
   def loop[A, M[_]: Monad](initial: M[A])(body: A => A) (p: A => Boolean): M[A] =
     summon[Monad[M]].flatMap(initial){ a =>
-      if p(a) 
+      if p(a)
       then loop (summon[Monad[M]].unit(body(a)))(body)(p)
       else initial
     }
