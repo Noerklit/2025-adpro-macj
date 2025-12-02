@@ -1,5 +1,5 @@
 package adpro
-package monads
+package monad
 
 import parsing.*
 import testing.*
@@ -31,7 +31,7 @@ trait Monad[F[_]] extends Functor[F]:
   extension [A](fa: F[A])
     def flatMap[B](f: A => F[B]): F[B] =
       fa.map(f).join
-    
+
     def map[B](f: A => B): F[B] =
       fa.flatMap(a => unit(f(a)))
 
@@ -72,7 +72,7 @@ trait Monad[F[_]] extends Functor[F]:
   def composeViaJoinAndMap[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
     a => f(a).map(g).join
 
-end Monad      
+end Monad
 
 object Monad:
   given genMonad: Monad[Gen] with
