@@ -69,13 +69,13 @@ object Q1:
    * to mix languages in the exam.  Recall that in Java all method
    * calls are virtual, so dynamically dispatched.
    *
-   * abstract class Printable: 
+   * abstract class Printable:
    *   def hello(): String
    *
-   * class Triangle extends Printable:  
+   * class Triangle extends Printable:
    *   override def hello(): String = "triangle"
    *
-   * class Square extends Printable: 
+   * class Square extends Printable:
    *   override def hello(): String = "square"
    *
    * Now the following is an ADT in Scala, that realizes the same hierarchy:
@@ -225,11 +225,11 @@ object Q5:
   // ...
 
   // (the question continues below)
-  
-  // 2022 NOTE: 
+
+  // 2022 NOTE:
   //
   // This question cannot be answered with the material we covered in
-  // Scala 3. If you are interested, this is how it can be done in Scala 3 
+  // Scala 3. If you are interested, this is how it can be done in Scala 3
   // https://docs.scala-lang.org/scala3/book/ca-implicit-conversions.html
   // but this material is not in the curriculum anymore
 
@@ -442,7 +442,7 @@ object Q12:
    *     result = result + l.head
    *     l = l.tail
    *   return result
-   * 
+   *
    *
    * Q12. (10%)
    *

@@ -61,7 +61,7 @@ import org.scalacheck.{Arbitrary, Gen, Prop}
 import Arbitrary.*, Prop.*
 import org.scalactic.TripleEquals.*
 
-import adpro.laziness.LazyList
+import adpro.lazyList.LazyList
 import adpro.state.*
 
 object Good:
@@ -143,7 +143,7 @@ end Good
 object MultivariateUniform:
 
   import pigaro.*
-  import adpro.monads.*
+  import adpro.monad.*
 
   /* QUESTION 5 #####################################################
    *
