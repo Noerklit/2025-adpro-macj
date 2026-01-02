@@ -75,8 +75,9 @@ object Good:
    * even if for less points.
    */
 
+  // I'm thinking that forAll should work, but it only checks singular elements not tuples/pairs
   def goodPairs [A] (l: List[A], good: (A,A) => Boolean): Boolean =
-    ???
+    l.zip(l.drop(1)).forall(good.tupled) // what the hell
 
 
 

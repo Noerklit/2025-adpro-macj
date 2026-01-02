@@ -54,6 +54,10 @@ import fpinscala.answers.state.*
 import fpinscala.answers.monoids.Foldable
 import fpinscala.answers.parallelism.Par
 import fpinscala.answers.monads.Monad
+import cats.instances.unit
+import fpinscala.answers.state.RNG._ints
+import fpinscala.answers.state.RNG.nonNegativeInt
+import fpinscala.answers.state.RNG.Simple
 
 
 object Q1:
@@ -87,7 +91,13 @@ object Q1:
    * the corresponding effect as calling the method hello in Java
    * implementation.  Uncomment the definition and fill in the gaps.
    */
-  // def hello (???: ???): ??? = ???
+
+  // import Printable.* Could write this to import Printable if I wanted to just write case Triangle => "triangle"
+  // without the Printable before it
+  def hello (print: Printable): String = print match
+    case Printable.Triangle => "triangle"
+    case Printable.Square => "square"
+  
 
 end Q1
 
@@ -108,7 +118,12 @@ object Q2:
    * on the input list.
    */
 
-  def sequence[Err,A] (as: List[Either[Err,A]]): Either[Err, List[A]] = ???
+  def sequence[Err,A] (as: List[Either[Err,A]]): Either[Err, List[A]] =
+    as.foldRight[Either[Err, List[A]]](Right(Nil))((aEither, acc) => aEither.flatMap(a => acc.map(xs => a :: xs)))
+  // We fold over a list where each element is Either an error or an A. Our initial value for the fold is an empty
+  // list wrapped in a Right, and we then use flatmap on our either value to get each individual a into our list.
+  // i don't remember why, but flatmaps helps automatically unwrap the either and if we encounter an error will
+  // fail and return the last error value.
 
 end Q2
 
@@ -128,11 +143,14 @@ object Q3:
    *
    * Do not implement the function, just put '???' in the body.
    */
+  import fpinscala.answers.monoids.Foldable
 
-   // def sequence ...
+   def sequence[Err,A, F[_]: Foldable] (as: F[Either[Err,A]]): Either[Err, F[A]] = ???
+  // To make this work we define the 3 types, the Either, the A and our F[_] which we know has to be Foldable.
+  // afterwards we can simply copy the definition from before and exchange the list for our F, since anything contained
+  // in the F is now foldable, which would make it able to work similar to before.
 
 end Q3
-
 
 
 object Q4:
@@ -153,9 +171,24 @@ object Q4:
    *     a <= x <= b
    */
 
+  import fpinscala.answers.state.*
+
   type Rand[A] = State[RNG, A]
 
-  lazy val riid: Rand[(Int,Int,Double)] = ???
+  lazy val riid: Rand[(Int,Int,Double)] =
+    for 
+      a <- State(RNG.int)
+      b <- State(RNG.int)
+      x <- State(RNG._double)
+      lower = Math.min(a, b)
+      upper = Math.max(a, b)
+    yield (lower, upper, lower + x * (upper - lower)) // I think this logic works?
+  // I think this is a task I would need to check in REPL.
+  // I use a for yield to generate my random integers a and b, could also be done with val, would just be a longer function.
+  // I then generate a random double x which by the way it is implemented is in the range 0<=x<1
+  // so it can range from anywhere from and including 0 up to 1.0 but not including 1.0 
+  // I use Math.min/max to define my lower and upper bound for my double and then use math to ensure x falls within the defined range
+
 
 end Q4
 
@@ -227,9 +260,10 @@ object Q7:
   def size[A](s: LazyList[A]): Int =
     def f(s: LazyList[A], acc: Int): Int = s match
       case LazyList.Cons(_, t) =>  f (t (), acc+1)
-      case LazyList.Empty => acc
+      case LazyList.Empty => acc 
     f(s, 0)
-
+  // Function works by taking the head element, and then doing recursion with the rest of the list and acc + 1
+  // returns the current acc if the list is now empty i.e we have counted all the elements.
 
   /* Q7. (5%)
    *
@@ -237,7 +271,10 @@ object Q7:
    * list is at least 10 elements? Explain.
    */
 
-  // Write here ...
+  // Since we are using a lazy list, our size function will run until we hit the empty node, i.e till we have counted all elements
+  // of the list. So if the lazylist contains a million elements, our check for whether the size if bigger or equal to 10 
+  // is very inefficient, as we really only need to count 10 elements to verify our predicate. Potentially this does not terminate
+  // at all aswell. 
 
 end Q7
 
@@ -258,7 +295,16 @@ object Q8:
    * from the course.
    */
 
-  def checkIfLongerEqThan[A](s: LazyList[A])(n: Int): Boolean = ???
+  def checkIfLongerEqThan[A](s: LazyList[A])(n: Int): Boolean =
+    size(s.take(n)) == n 
+    // The elegant solution, we only compute the exact elements of the lazylist necessary and check whether they amount to
+    // size we expect. 
+
+    // s.take(n) match
+    //   case LazyList.Empty => false
+    //   case LazyList.Cons(h, t) => true
+    // This was my first though, I think it will work but would be graded lower since i use pattern matching.
+    
 
 end Q8
 
@@ -289,12 +335,22 @@ object Q9:
   class MySpec
     extends org.scalacheck.Properties("Q9"):
 
+    import org.scalacheck.*
+    import org.scalacheck.Prop.*
+    import org.scalacheck.Arbitrary.arbitrary
+
     given Arbitrary[LazyList[Int]] =
       Arbitrary { Gen.listOf(Gen.choose(1, 100))
         .map { l => LazyList(l*) } }
+    // Implicit style of testing, here we simply provide a way to generate a lazylist of int, so if i then use a forAll
+    // with no generator as an argument, it looks at the type signature of my s, sees that it is a LazyList[Int] and then
+    // looks into the implicit scope finds our given and then uses that one to produce the list.
 
     property("Q9: Write the test here by replacing 'false' below") =
-      false
+      forAll{(s: LazyList[Int]) => (s != LazyList.Empty) ==> Q8.checkIfLongerEqThan(s.append(s))(2)}
+    // I dont think the check for whether the list is empty is necessary as our generator should always make a list that is 
+    // atlest size of one? But I guess it is good practice anyway. The double arrow ==> is a way to say only run the test on
+    // the right if the condition on the left is true. 
 
 end Q9
 
@@ -312,7 +368,15 @@ object Q10:
    * Par[Option[A]] value, for any type 'A'.
    */
 
-  def flatten[A](opa: Option[Par[A]]): Par[Option[A]] = ???
+  def flatten[A](opa: Option[Par[A]]): Par[Option[A]] = 
+    opa match
+      case None => Par.unit[Option[A]](None)
+      case Some(pa) => pa.map[Option[A]](Some.apply)
+      // case Some(pa) => map(pa)(a => Some(a)) could also be done like this for the second case
+  // So in the standard library there exists a flatten, and what it does is remove a nesting level of options. So if we have
+  // Option[Option][Int] so for example Some(Some(42)) and we call flatten on it we get Option[Int] aka Some(42).
+  // In this case we match on our option of parallels, if it turns out to be None, we wrap a None in a Parallel by using the unit function.
+  // If we get some Option we take that Parallel A and map it to an Option of some A by using the Some.apply function.
 
 end Q10
 
@@ -326,8 +390,16 @@ end Q10
  * Provide its user oriented description, not an explanation of the
  * implementation.
  */
+// My take on the answer:
+// The function takes an Option, containing a Parallel computation, which might be None, essentially meaning that there 
+// is no computation, and instead wraps it into a Parallel computation, which produces an Optional value A.
+// This enables the user to combine the opa computation with other Parallel computations without having to unpack opa each time.
 
- // Write here ...
+// Below is the answer given in the answer sheet:
+// This function takes a computation whose construction might have failed (the
+// computation might not be there, be triviallly None), and rewraps it into a
+// computation that produces an optional value A.  This allows composing the
+// result into a larger parallel computation expression.
 
 
 
@@ -360,6 +432,10 @@ object Q12:
    * The code below computes a sum of list of integers.
    * (Warning: imperative code below)
    *
+   * Imperative code here refers to executing commands sequentially, changing the state of the program until the end result is achieved.
+   * In the code below this is done with the variable result, which we then keep on updating until the list is empty and result
+   * is achieved.
+   * 
    * def sum(var l: List[Int]): Int =
    *   var result = 0
    *   while l.nonEmpty do
@@ -376,14 +452,27 @@ object Q12:
    * the code):
    */
 
-  // def sum (l: List[Int]): Int =
-  //   val initial: (List[Int], Int) = ???
-  //   val body = ???
-  //   val p = ???
+  /*
+  * A pure function always returns the same result for the same input, 
+  * and it never modifies any external variables or state.
+  */
+  def sum (l: List[Int]): Int =
+    val initial: (List[Int], Int) = (l, 0)
+    val body: ((List[Int], Int)) => (List[Int], Int) = (l, result) => (l.tail, l.head + result)
+    val p: ((List[Int], Int)) => Boolean = (l, result) => l.nonEmpty
 
-  //   val result = loop[???,???](initial)(body)(p)
-  //   result._2
-
+    val result = loop[(List[Int], Int), Id](initial)(body)(p)
+    result._2
+  /*
+  * Could also define a type LI = (List[Int], Int) and use that instead of writing it out explicitly each time.
+  * The initial value is simply the given list and a starting point of 0 for our results.
+  * The body takes our list and our current results and maps it to the new list which is the tail, and the new result which
+  * is the head of the list + the current result.
+  * The predicate maps from our current list and result to a boolean, which checks whether the current list is empty, as long
+  * as it is non empty, the body is applied again.
+  * The loop typing is our type, which in this case is (List[Int], Int) and the Monad is the identity monad as defined above
+  * the type for this one being Id. 
+  */
 
   /* DISCLAIMER: Normally, we do not want to compute a sum of a list in this way.
    * This is an artificial exercise for simplicity.
@@ -405,6 +494,13 @@ object Q13:
    * value.
    */
 
-  def loop[A, M[_]: Monad] (initial: M[A]) (body: A => A) (p: A => Boolean): M[A] = ???
+  def loop[A, M[_]: Monad] (initial: M[A]) (body: A => A) (p: A => Boolean): M[A] = 
+    for 
+      a <- initial
+      result <- if p(a) then loop (summon[Monad[M]].unit(body(a)))(body)(p) else initial
+    yield result
+
+  def loop_[A, M[_]: Monad] (initial: M[A]) (body: A => A) (p: A => Boolean): M[A] = 
+    summon[Monad[M]].flatMap(initial) { a => if p(a) then loop_ (summon[Monad[M]].unit(body(a)))(body)(p) else initial}
 
 end Q13

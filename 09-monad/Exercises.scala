@@ -399,9 +399,14 @@ end FunctorEx16Spec
 // We do this as an extension to maintain the linear sequence of exercises in
 // the file (we would normally place it in the Monad trait).
 
+// This is going to take a list of monads, merge them into a single monad that generates a list
+// Use unit and map2. How will I iterate through the list with only these operations?
 extension [F[_]](m: Monad[F])
   def sequence[A](fas: List[F[A]]): F[List[A]] =
-    ???
+    fas.foldRight(m.unit(List.empty))((a,acc) => m.map2(a)(acc)((unwrapped_a, unwrapped_acc) => unwrapped_a :: unwrapped_acc))
+    // a and acc is still monads, but map2 unwraps them, performs the operation and then rewwraps them as a monad
+    // Below does the same, just looks cleaner, but is maybe less understandable
+    // fas.foldRight(m.unit(List.empty))((a,acc) => m.map2(a)(acc)(_ :: _)) //so a :: acc does not work but this does, why?
 
 
 // Exercise 18

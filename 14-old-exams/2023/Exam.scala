@@ -73,7 +73,7 @@ object Streaming:
 
 
   def fViaFold (l: LazyList[Int]): Int = 
-    ???
+    l.foldRight(0)((hd, acc) => if hd % 2 == 1 then acc + 1 else acc)
 
 end Streaming
 
@@ -102,21 +102,32 @@ object Parsing:
    * should produce Right(5) for the above example.
    */
 
-  val WS: Parser[String] = regex("""[ \t]+""".r)
-  val NL: Parser[String] = string("\n")
+  val WS: Parser[String] = regex("""[ \t]+""".r) //This parses Whitespaces.
+  val NL: Parser[String] = string("\n") //This parses linjeskift/line changes
   val INT: Parser[Int] = 
-    regex("""(\+|-)?[0-9]+""".r).map { _.toInt }
+    regex("""(\+|-)?[0-9]+""".r).map { _.toInt } //Parses an integer I think
 
   val commaSeparatedInts: Parser[List[Int]] =
     { WS.? |* INT *| WS.? ** (string(",") |* WS.? |* INT *| WS.?).* }
       .map { (h,t) => h::t }
+  // WS.? |* INT *| WS.? parses an integer whilst ignoring any whitespaces the |* discards the left side and *| discards the right ergo the whitespaces
+  // we then if we have a parsed string, use the combine operator ** to build a tuple which becomes our list and we then see
+  // if there is a comma, with more characters afterwards, where we again disregard anything but the int we parse, 
+  // and the .* at the end simply is the many operator, so we do this until it fails I assume.
 
   lazy val parser: Parser[List[List[Int]]] =
     { commaSeparatedInts ** { ( NL |* commaSeparatedInts ) }.* }
       .map { (h,t) => h::t }
+  // We take our list of commaseperatedints and combine it with another one, where we first use NL to parse a change of lines
+  // disregarding the actual parsing of it and then using commaSperatedInts again to parse the next line, again using .* 
+  // to apply this until it fails, aka parsing all lines.
 
   lazy val longestLine: Parser[Int] = 
-    ???
+    {  parser.map { l => l.map {_.size}.max } }
+  // Use map on parser to access the List[List[Int]] which we now have in our l. We then map on l to access a specific List[Int]
+  // the _.size call transforms our List[List[Int]] into a List[Int] aka a list of lengths, 
+  // and we then call max on this list of lengts to find the biggest int in that list.
+  // we return that. The parser definition automatically wraps in a Right on success. 
 
 
   /* QUESTION 3 ######################################################
@@ -128,7 +139,10 @@ object Parsing:
    */
 
   val allLinesTheSame: Parser[Boolean] = 
-    ???
+    {parser.map { l => l.map {_.size}.toSet.size == 1} }
+  // We again convert our List[List[Int]] into a List[Int] with _.size and this time we call .toSet on this to convert it into
+  // a set. If all lengts were the same number, the size of the set should be 1 which would return true, otherwise false will
+  // be returned by the toSet.size == 1 check. 
 
 end Parsing
 
@@ -181,10 +195,12 @@ object Game:
   type Strategy = Dist[Move]
 
   lazy val Alice: Strategy =
-    ???
+    Pigaro.uniform("Alice")(Rock, Paper, Scissors)
+    // Uniform(Rock, Paper, Scissors)
 
   lazy val Bob: Strategy =
-    ???
+    Pigaro.uniform("Bob")(Rock, Paper)
+    // Uniform(Rock, Paper)
 
 
 
@@ -198,7 +214,14 @@ object Game:
    * Answering QUESTION 4 is not required to answer this one.
    */
   def game (player1: Strategy, player2: Strategy): Dist[Result] =
-    ???
+    player1.map2(player2)(winner) 
+    // Takes a move from player 1 and a move from player 2 and applies the winner function to both, 
+    // and puts result in new Dist box
+    
+    (player1 -> player2).map{case (m1, m2) => winner(m1, m2)}
+    // Makes a distribution of pairs of the moves player1 and player2 can do, these are then mapped transforming each pair.
+    // Case matching is then used to pull out the moves from the pair and give them to the winner function.
+    
 
 
 
@@ -215,7 +238,9 @@ object Game:
     = spire.random.rng.SecureJava.apply
 
   lazy val aliceFraction: Double = 
-    ???
+    game(Alice, Bob).sample(10000).pr(Some(P1))
+    // We write Some(P1) instead of just Alice, as that is how it is defined in the winner function.
+    // If instead I had written game(Bob, Alice) I would have to have written Some(P2) for it to still calculate the correct thing.
 
 end Game
 
@@ -302,7 +327,15 @@ object RL:
      */
 
     property("00 Null update on null table 2x3") = 
-      ???
+      update(qZero(2,3), 0, 0)(0.0, 0.0) == qZero(2,3)
+    /* 
+    * Just do exactly as the task is written. First update, so we call the update function. 
+    * Then it should be a 2 x 3 zero-initialized q table which the qZero function makes, so we call that with (2,3)
+    * to get the size that is asked for.
+    * Then it should be called with position 0, 0 so we pass these along.
+    * It should be with reward 0.0 and estimate 0.0 so we pass that in a new () as it is done in the update function.
+    * Finally we should check that the table is equal to the input table ergo qZero(2,3).
+    */ 
 
 
 
@@ -321,7 +354,13 @@ object RL:
      */
 
     property("01 Null update on null table 2x3") = 
-      ???
+      forAll(qGen(2,3)) { q => 
+        forAll(Gen.choose(0, 1), Gen.choose(0, 2)) { (state, action) => 
+          val qUpdate = update(q, state, action)(q(state)(action), 0.0)
+          qUpdate ?= q //using ?= gives more information on why it fails as it attaches labels to each side of the comparison
+          // much better than simply using == which just gives a true or false value.
+        }
+      }
 
   end NullUpdatesSpec
 
@@ -355,6 +394,8 @@ object RL:
   
   def updateWithLens[State, Action] (q: Q[State, Action], s: State, a: Action)
     (reward: Double, estimate: Double): Q[State, Action] =
-    ???
+    val qsa = lens(s, a).getOption(q).get
+    val value = (1.0 - α) * qsa + α * (reward + γ * estimate)
+    lens(s, a).replace(value)(q)
 
 end RL
