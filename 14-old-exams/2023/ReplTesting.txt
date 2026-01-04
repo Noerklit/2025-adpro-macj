@@ -1,0 +1,87 @@
+REPL Testing Guide for Advanced Programming Exam
+1. Setup
+Run the following in your terminal to start the REPL with all project files loaded:
+
+Bash
+
+scala-cli repl .
+2. Testing Streaming (Q1)
+Copy and paste these lines to verify the fold logic:
+
+Scala
+
+import adpro.Streaming.*
+import adpro.laziness.LazyList
+
+val l = LazyList(1, 2, 3, 4, 5)
+// Should both return 3 (1, 3, and 5 are odd)
+fViaRec(l)
+fViaFold(l)
+
+val empty = LazyList[Int]()
+fViaFold(empty) // Should return 0
+3. Testing Parsing (Q2 & Q3)
+Test the CSV parser and the logic for checking line lengths:
+
+Scala
+
+import adpro.Parsing.*
+import adpro.parsing.Sliceable.run
+
+val inputOk = "1,2,3\n4,5,6"
+val inputBad = "1,2,3\n4,5"
+
+// Q2: Max columns (Should be 3)
+longestLine.run(inputOk)
+
+// Q3: Same line lengths (Should be Right(true) then Right(false))
+allLinesTheSame.run(inputOk)
+allLinesTheSame.run(inputBad)
+4. Testing Probabilistic Games (Q4 - Q6)
+Test the distribution logic and Alice's winning fraction:
+
+Scala
+
+import adpro.Game.*
+import adpro.Game.Player.*
+import adpro.Game.given  // This line imports the 'rng' given instance
+
+// Check Alice's strategy (Uniform)
+
+
+// Check winner logic manually
+winner(Move.Rock, Move.Scissors) // Should be Some(P1)
+
+// Check Alice vs Bob winning fraction (approx 0.33)
+aliceFraction
+5. Testing RL & Lenses (Q7 - Q9)
+Verify the Q-Table updates and the Lens implementation:
+
+Scala
+
+import adpro.RL.*
+
+// Create a small zero table
+val q0 = qZero(2, 2)
+
+// Q7: Manual update (State 0, Action 0, Reward 10.0)
+// With alpha=0.5, (1-0.5)*0 + 0.5*(10) = 5.0
+val q1 = update(q0, 0, 0)(10.0, 0.0)
+q1(0)(0) // Should be 5.0
+
+// Q9: Lens update (Should give same result as q1)
+val qLens = updateWithLens(q0, 0, 0)(10.0, 0.0)
+qLens(0)(0) == q1(0)(0) // Should be true
+6. Running ScalaCheck Properties manually
+If you want to run one specific property from your spec files without running everything:
+
+Scala
+
+// Replace 'ExamSpec' with your actual object name if different
+adpro.ExamSpec.check() 
+Quick Troubleshooting in REPL:
+"Not found: value X": You likely forgot to import the object. Run import adpro.Streaming.* etc.
+
+Infinite Loop: If a LazyList test hangs, you might be calling size on an infinite list. Use .take(n) first.
+
+Reloading: If you change your code in the .scala file, you must exit the REPL (:quit) and restart scala-cli repl . to see the changes.
